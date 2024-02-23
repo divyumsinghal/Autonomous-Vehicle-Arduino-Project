@@ -396,6 +396,7 @@
 
   void setup() 
   {
+
     Serial.begin(9600);                      // Initialize Serial communication with a baud rate of 9600
     pinMode(LeftIRSensorInput, INPUT);       // Configure the left infrared sensor pin as an input
     pinMode(RightIRSensorInput, INPUT);      // Configure the right infrared sensor pin as an input
@@ -442,6 +443,7 @@
       ProcessingClient = server.available();
 
       Serial.print("-");
+
       delay(100);
     };
 
@@ -460,7 +462,7 @@
     if (loopCounter % 9 == 0)
     {
       checkServer();
-    }
+    };
 
     if (loopCounter == FrequencyOfTracking/2)
     {
