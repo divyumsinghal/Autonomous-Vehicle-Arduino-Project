@@ -1,9 +1,3 @@
----
-runme:
-  id: 01HQAZKC8W1K65H8E210ESS1YZ
-  version: v3
----
-
 # Autonomous-Vehicle-Project (In Progress)
 
 A small Autonomous Vehicle controlled using an Arduino Board, using a wireless connection and an interactive GUI built using processing.
