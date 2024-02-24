@@ -21,12 +21,8 @@ char stopURL = 'X';
 char displayHeartURL = 'H';
 char displaySmileyURL = 'S';
 char displayW5URL = 'W';
-char mode1URL = 'A'; 
-char mode2URL = 'B';
 
 boolean StopStart = false;
-boolean SwitchModes = false;
-
 
 // Setup function called once at the beginning
 void setup()
@@ -36,18 +32,18 @@ void setup()
   myClient = new Client(this, serverAddress, 5200);
 
   // Set the size of the Processing window
-  size(500, 800);
+  size(500, 600);
 
   // Initialize controlP5
   cp5 = new ControlP5(this);
 
 
   // Positioning variables for buttons
-  int buttonX = 150;
+  int buttonX = 100;
   int buttonY = 50;
-  int buttonWidth = 200;
+  int buttonWidth = 300;
   int buttonHeight = 100;
-  int buttonSpacing = 125;
+  int buttonSpacing = 140;
   
   // Add a switches to the GUI
   
@@ -58,58 +54,28 @@ void setup()
      .setSize(buttonWidth, buttonHeight)
      .setMode(ControlP5.SWITCH)
      .setColorActive(color(100,100,100))
-     .setCaptionLabel("OFF/ON");
+     .setCaptionLabel("OFF/ON")
+     .getCaptionLabel().setFont(createFont("Arial", 30));
      
-  cp5.addToggle("SwitchModes")
-     .setPosition(buttonX, buttonY + buttonSpacing)
-     .setSize(100,20)
-     .setValue(false)
-     .setSize(buttonWidth, buttonHeight)
-     .setMode(ControlP5.SWITCH)
-     .setColorActive(color(100,100,100))
-     .setCaptionLabel("Mode1/Mode2");
-     
-     /*
-  cp5.addButton("start")
-    .setPosition(buttonX, buttonY)
-    .setLabel("Start");
-    
-   cp5.addButton("stop")
-    .setPosition(buttonX, buttonY + buttonSpacing)
-    .setSize(buttonWidth, buttonHeight)
-    .setLabel("Stop");
-    */
-    
-  
   // Add buttons to the GUI for controlling LED matrix display
   cp5.addButton("displayHeart")
-    .setPosition(buttonX, buttonY + 2 * buttonSpacing)
+    .setPosition(buttonX, buttonY + 1 * buttonSpacing)
     .setSize(buttonWidth, buttonHeight)
-    .setLabel("Display Heart");
+    .setLabel("Display Heart")
+    .getCaptionLabel().setFont(createFont("Arial", 35));
 
   cp5.addButton("displaySmiley")
-    .setPosition(buttonX, buttonY + 3 * buttonSpacing)
+    .setPosition(buttonX, buttonY + 2 * buttonSpacing)
     .setSize(buttonWidth, buttonHeight)
-    .setLabel("Display Smiley");
+    .setLabel("Display Smiley")
+    .getCaptionLabel().setFont(createFont("Arial", 35));
 
   cp5.addButton("displayW5")
-    .setPosition(buttonX, buttonY + 4 *  buttonSpacing)
+    .setPosition(buttonX, buttonY + 3 *  buttonSpacing)
     .setSize(buttonWidth, buttonHeight)
-    .setLabel("Display W5");
-    
-     
-  // Create a slider with values from 1 to 10
-  cp5.addSlider("SpeedControl")
-     .setRange(1, 10)
-     .setValue(1)
-     .setPosition(buttonX - 35, buttonY + 5 *  buttonSpacing)
-     .setSize(300, 20)
-     .setNumberOfTickMarks(10)
-     .setSliderMode(Slider.FIX)
-     .snapToTickMarks(true)
-     .setLabel("Speed");
-
-     
+    .setLabel("Display W5")
+    .getCaptionLabel().setFont(createFont("Arial", 40));
+        
 }
 
 
@@ -158,9 +124,9 @@ void sendCommand(char command)
     if (myClient != null) 
     {
       myClient.write(command);
-      println("Sent Command");
-      //println("Sending command: " + command);
-      //println(myClient.ip());
+      // println("Sent Command");
+      // println("Sending command: " + command);
+      // println(myClient.ip());
     }
     else
     {
@@ -168,19 +134,6 @@ void sendCommand(char command)
     }
 }
 
-void SwitchModes(boolean theFlag)
-{
-  if(theFlag) 
-  {
-    sendCommand(mode2URL);
-    //cp5.setColorBackground(color(0,255,0));
-  } 
-  else 
-  {
-    sendCommand(mode1URL);
-    //cp5.setColorBackground(color(255,0,0));
-  }
-}
 
 void StopStart(boolean theFlag)
 {
