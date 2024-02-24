@@ -14,6 +14,11 @@
 // Include the library for WiFi communication using the NINA module
 #include <WiFiS3.h>
 
+// Include the library for interfacing with the Huskylens vision sensor
+#include "HUSKYLENS.h"
+// Include the library for software serial communication
+#include "SoftwareSerial.h"
+
 
 // Variables
 
@@ -68,22 +73,22 @@ String message;                 // Message to send to the client
 float distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
 
 
+// Define an enumeration for modes
+enum Modes {
+  MODE_1,  // Speed Control
+  MODE_2   // Object Following
+};
 
-
-
-
-
-
-
-
+// Variable to store the current mode
+Modes currentMode = MODE_1;
 
 
 
 // Wifi
 
 // Wifi Details
-char ssid[] = "WIFI";
-char pass[] = "PASSWORD";
+char ssid[] = "wifi";
+char pass[] = "pass";
 
 // Declare an instance of the WiFiServer class named 'server'
 WiFiServer server(5200);
@@ -138,17 +143,17 @@ void checkServer() {
       stopCar();
       break;
 
+    case mode1URL:
+      currentMode = MODE_1;
+      ProcessingClient.write("Switching to Mode 1!" + '\n');
 
+      break;
 
+    case mode2URL:
+      ProcessingClient.write("Switching to Mode 2!" + '\n');
 
-
-
-
-
-
-
-
-
+      currentMode = MODE_2;
+      break;
 
     case displayHeartURL:
       // Serial.println(data);
@@ -169,13 +174,13 @@ void checkServer() {
       // Handle unknown command
       // Serial.print(data);
 
-
-
-
-
-
-
-
+      if (currentMode == MODE_2) {
+        int setSpeed = data - '0' + 1;
+        if (setSpeed > 0 && setSpeed <= 10) {
+          carSpeed = setSpeed * 10;
+          // Serial.println("Inside Mode 2, Changing speed to: " + String(carSpeed));
+        }
+      }
       break;
   }
 }
@@ -234,6 +239,114 @@ void displayW5() {
   matrix.loadFrame(W5);
   //delay(500);
 }
+
+
+
+// HUSKY LENS
+
+HUSKYLENS huskylens;
+
+// Define an enumeration for Tags
+enum TAG {
+  TAG_1,  //Start
+  TAG_2,  //Stop
+  TAG_3,  //heart
+  TAG_4,  //Smiley
+  TAG_5,  //W5
+  TAG_6,  //Slow Down
+  TAG_7   //Speed UP
+};
+
+// Setup Husky Lens
+
+void huskyLensSetup() {
+
+  // Initialize the I2C communication bus
+  Wire.begin();
+
+  // Attempt to initialize communication with the Huskylens using I2C
+  while (!huskylens.begin(Wire)) {
+    // Print a failure message to the Serial Monitor
+    Serial.println(F("Begin failed!"));
+
+    // Provide troubleshooting suggestions
+    Serial.println(F("1. Please recheck the \"Protocol Type\" in HUSKYLENS (General Settings>>Protocol Type>>I2C)"));
+    Serial.println(F("2. Please recheck the connection."));
+
+    // Introduce a brief delay before retrying initialization
+    delay(100);
+  }
+
+  // Iterate through all available Huskylens results
+
+  while (huskylens.available()) {
+    HUSKYLENSResult result = huskylens.read();  // Read and store the current result
+    //printResult(result);                        // Print detailed information about the detected object
+  }
+}
+
+void askHusky() {
+
+  HUSKYLENSResult result = huskylens.read(); 
+
+  TAG huskySaw = 1; // result.something
+
+  switch (huskySaw) {
+    case TAG_1:
+      // Serial.println(huskySaw);
+      StopTheCar = false;
+      moveForwardatSpeed(carSpeed);
+      // Serial.println(huskySaw);
+      break;
+
+    case TAG_2:
+      // Serial.println(huskySaw);
+      StopTheCar = true;
+      stopCar();
+      break;
+      ProcessingClient.write("Switching to Mode 2!" + '\n');
+
+      currentMode = MODE_2;
+      break;
+
+    case TAG_3:
+      // Serial.println(huskySaw);
+      displayHeart();
+      break;
+
+    case TAG_4:
+      // Serial.println(huskySaw);
+      displaySmiley();
+      break;
+
+    case TAG_5:
+
+      // Serial.println(huskySaw);
+      displayW5();
+      break;
+
+    case TAG_6:
+
+      // Serial.println(huskySaw);
+      carSpeed *= 0.9;
+      break;
+
+    case TAG_7:
+
+      // Serial.println(huskySaw);
+      carSpeed = min(1.1 * carSpeed , MaxSpeed);
+      break;
+
+    default:
+
+      // Handle unknown command
+      // Serial.print(huskySaw);
+      break;
+  }
+}
+
+
+
 
 // Functions needed for Movement
 
@@ -308,6 +421,8 @@ void turnRight() {
   digitalWrite(LeftMotorSwitchActive, HIGH);
 }
 
+
+
 // Sensor Functions
 
 // Function to measure the closest obstacle distance using the ultrasonic sensor
@@ -353,15 +468,15 @@ void checkPositionRelativeToObject() {
 
     return;
   } else {
-
-
-
-
-
-
-
-
     obstacleTooClose = false;
+
+    if (currentMode == MODE_1) {
+
+
+      carSpeed = min(MaxSpeed, (carSpeed * (49 + (nearestObstacleDistance / ObjectFollowingDistance)) / 50));
+
+      // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeed));
+    }
   }
 }
 
@@ -375,7 +490,7 @@ void keepMovingCheckingIRSensors() {
   // Serial.println(irLeftValue);
   // Serial.println(irRightValue);
 
-  if (irLeftValue == LOW) {
+  if (irLeftValue == LOW && irRightValue == HIGH) {
 
     // Serial.println("Left sensor off track - turning right");
 
@@ -476,6 +591,10 @@ void loop() {
   // Serial.println("starting loop");  // Optional debugging statement
   if (loopCounter % 17 == 0) {
     checkServer();
+  }
+
+  if (loopCounter % 21 == 0) {
+    askHusky();
   }
 
   if (loopCounter % 25 == 0) {

@@ -68,14 +68,14 @@ String message;                 // Message to send to the client
 float distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
 
 
+// Define an enumeration for modes
+enum Modes {
+  MODE_1,  // Speed Control
+  MODE_2   // Object Following
+};
 
-
-
-
-
-
-
-
+// Variable to store the current mode
+Modes currentMode = MODE_1;
 
 
 
@@ -138,17 +138,17 @@ void checkServer() {
       stopCar();
       break;
 
+    case mode1URL:
+      currentMode = MODE_1;
+      ProcessingClient.write("Switching to Mode 1!" + '\n');
 
+      break;
 
+    case mode2URL:
+      ProcessingClient.write("Switching to Mode 2!" + '\n');
 
-
-
-
-
-
-
-
-
+      currentMode = MODE_2;
+      break;
 
     case displayHeartURL:
       // Serial.println(data);
@@ -169,13 +169,13 @@ void checkServer() {
       // Handle unknown command
       // Serial.print(data);
 
-
-
-
-
-
-
-
+      if (currentMode == MODE_2) {
+        int setSpeed = data - '0' + 1;
+        if (setSpeed > 0 && setSpeed <= 10) {
+          carSpeed = setSpeed * 10;
+          // Serial.println("Inside Mode 2, Changing speed to: " + String(carSpeed));
+        }
+      }
       break;
   }
 }
@@ -353,15 +353,15 @@ void checkPositionRelativeToObject() {
 
     return;
   } else {
-
-
-
-
-
-
-
-
     obstacleTooClose = false;
+
+    if (currentMode == MODE_1) {
+
+
+      carSpeed = min(MaxSpeed, (carSpeed * (49 + (nearestObstacleDistance / ObjectFollowingDistance)) / 50));
+
+      // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeed));
+    }
   }
 }
 
@@ -375,7 +375,7 @@ void keepMovingCheckingIRSensors() {
   // Serial.println(irLeftValue);
   // Serial.println(irRightValue);
 
-  if (irLeftValue == LOW) {
+  if (irLeftValue == LOW && irRightValue == HIGH) {
 
     // Serial.println("Left sensor off track - turning right");
 
