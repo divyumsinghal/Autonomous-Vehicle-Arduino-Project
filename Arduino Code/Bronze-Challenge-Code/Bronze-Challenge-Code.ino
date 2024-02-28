@@ -44,7 +44,7 @@ const float LeftWheelCoefficient = 0.92;       // Coefficient for adjusting left
 const float MinSpeed = 0;                      // Minimum speed scale for the car
 const float MaxSpeed = 100;                    // Maximum speed scale for the car
 const int PWMMin = 0;                          // Minimum PWM value
-const int PWMMax = 135;                        // Maximum PWM value (capping it at 135 instead of 225)
+const int PWMMax = 125;                        // Maximum PWM value (capping it at 135 instead of 225)
 const int TurnSpeedOuter = 100;                // Turning speed for outer wheel
 const int TurnSpeedInner = 30;                 // Turning speed for inner wheel
 const int EncoderPulsesPerRevolution = 4;      // Encoder generates 8 pulses per revolution -> 4 rising
@@ -252,7 +252,7 @@ void turnLeft() {
   analogWrite(RightMotorPWM, mapSpeedToPWM(RightWheelCoefficient * TurnSpeedOuter));
 
   // Stop the left motor by setting its PWM to 0
-  analogWrite(LeftMotorPWM, mapSpeedToPWM(TurnSpeedInner));
+  analogWrite(LeftMotorPWM, mapSpeedToPWM(LeftWheelCoefficient * TurnSpeedInner));
 
   digitalWrite(RightMotorSwitchActive, HIGH);
   digitalWrite(LeftMotorSwitchActive, HIGH);
@@ -263,7 +263,7 @@ void turnRight() {
   // Serial.println("Inside turnRight - Turning right");
 
   // Stop the right motor by setting its PWM to 0
-  analogWrite(RightMotorPWM, mapSpeedToPWM(TurnSpeedInner));
+  analogWrite(RightMotorPWM, mapSpeedToPWM(RightWheelCoefficient * TurnSpeedInner));
 
   // Adjust the left motor PWM for a right turn
   analogWrite(LeftMotorPWM, mapSpeedToPWM(LeftWheelCoefficient * TurnSpeedOuter));
