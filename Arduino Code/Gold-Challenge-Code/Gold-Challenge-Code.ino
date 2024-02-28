@@ -1,4 +1,8 @@
 // Some necessary stuff
+// Include the library for interfacing with the Huskylens vision sensor
+#include "HUSKYLENS.h"
+// Include the library for software serial communication
+#include <SoftwareSerial.h>
 
 // URLs for different car commands
 #define startURL 'Z'
@@ -13,11 +17,6 @@
 #include "Arduino_LED_Matrix.h"
 // Include the library for WiFi communication using the NINA module
 #include <WiFiS3.h>
-
-// Include the library for interfacing with the Huskylens vision sensor
-#include "HUSKYLENS.h"
-// Include the library for software serial communication
-#include "SoftwareSerial.h"
 
 
 // Variables
@@ -50,7 +49,7 @@ const float LeftWheelCoefficient = 0.95;  // Coefficient for adjusting left whee
 const float MinSpeed = 0;                      // Minimum speed scale for the car
 const float MaxSpeed = 100;                    // Maximum speed scale for the car
 const int PWMMin = 0;                          // Minimum PWM value
-const int PWMMax = 130;                        // Maximum PWM value (capping it at 125 instead of 225)
+const int PWMMax = 140;                        // Maximum PWM value (capping it at 140 instead of 225)
 const int TurnSpeedOuter = 95;                 // Turning speed for outer wheel
 const int TurnSpeedInner = 30;                 // Turning speed for inner wheel
 const int EncoderPulsesPerRevolution = 8;      // Encoder generates 8 pulses per revolution
@@ -62,12 +61,12 @@ const float radiusOfWheel = 3.24;              // radius of wheel in cm
 
 
 // more variables
-float nearestObstacleDistance;  // Distance to the nearest obstacle from ultrasonic sensor
-bool obstacleTooClose = false;  // Flag indicating if an obstacle is too close
-float carSpeed = MaxSpeed;      // Current speed of the car
-unsigned int loopCounter = 0;   // Counter for obstacle tracking frequency
-bool StopTheCar = false;        // Control if you want the car to move
-String message;                 // Message to send to the client
+float nearestObstacleDistance = 100;  // Distance to the nearest obstacle from ultrasonic sensor
+bool obstacleTooClose = false;        // Flag indicating if an obstacle is too close
+float carSpeed = MaxSpeed;            // Current speed of the car
+unsigned long loopCounter = 0;        // Counter for obstacle tracking frequency
+bool StopTheCar = false;              // Control if you want the car to move
+String message;                       // Message to send to the client
 
 // How far have the wheels spun (in cm)
 float distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
@@ -124,7 +123,7 @@ void checkServer() {
   // Serial.print('_');
 
   // Send a "Hello Client" message to the connected client
-  //client.write("Hello Client");
+  //("Hello Client");
 
   // Serial.print("Client is connected!");
   char data = ProcessingClient.read();
@@ -145,12 +144,12 @@ void checkServer() {
 
     case mode1URL:
       currentMode = MODE_1;
-      ProcessingClient.write("Switching to Mode 1!" + '\n');
+      ProcessingClient.write("NOW Mode 1!" + '\n');
 
       break;
 
     case mode2URL:
-      ProcessingClient.write("Switching to Mode 2!" + '\n');
+      ProcessingClient.write("NOW Mode 2!" + '\n');
 
       currentMode = MODE_2;
       break;
@@ -240,114 +239,6 @@ void displayW5() {
   //delay(500);
 }
 
-
-
-// HUSKY LENS
-
-HUSKYLENS huskylens;
-
-// Define an enumeration for Tags
-enum TAG {
-  TAG_1,  //Start
-  TAG_2,  //Stop
-  TAG_3,  //heart
-  TAG_4,  //Smiley
-  TAG_5,  //W5
-  TAG_6,  //Slow Down
-  TAG_7   //Speed UP
-};
-
-// Setup Husky Lens
-
-void huskyLensSetup() {
-
-  // Initialize the I2C communication bus
-  Wire.begin();
-
-  // Attempt to initialize communication with the Huskylens using I2C
-  while (!huskylens.begin(Wire)) {
-    // Print a failure message to the Serial Monitor
-    Serial.println(F("Begin failed!"));
-
-    // Provide troubleshooting suggestions
-    Serial.println(F("1. Please recheck the \"Protocol Type\" in HUSKYLENS (General Settings>>Protocol Type>>I2C)"));
-    Serial.println(F("2. Please recheck the connection."));
-
-    // Introduce a brief delay before retrying initialization
-    delay(100);
-  }
-
-  // Iterate through all available Huskylens results
-
-  while (huskylens.available()) {
-    HUSKYLENSResult result = huskylens.read();  // Read and store the current result
-    //printResult(result);                        // Print detailed information about the detected object
-  }
-}
-
-void askHusky() {
-
-  HUSKYLENSResult result = huskylens.read(); 
-
-  TAG huskySaw = 1; // result.something
-
-  switch (huskySaw) {
-    case TAG_1:
-      // Serial.println(huskySaw);
-      StopTheCar = false;
-      moveForwardatSpeed(carSpeed);
-      // Serial.println(huskySaw);
-      break;
-
-    case TAG_2:
-      // Serial.println(huskySaw);
-      StopTheCar = true;
-      stopCar();
-      break;
-      ProcessingClient.write("Switching to Mode 2!" + '\n');
-
-      currentMode = MODE_2;
-      break;
-
-    case TAG_3:
-      // Serial.println(huskySaw);
-      displayHeart();
-      break;
-
-    case TAG_4:
-      // Serial.println(huskySaw);
-      displaySmiley();
-      break;
-
-    case TAG_5:
-
-      // Serial.println(huskySaw);
-      displayW5();
-      break;
-
-    case TAG_6:
-
-      // Serial.println(huskySaw);
-      carSpeed *= 0.9;
-      break;
-
-    case TAG_7:
-
-      // Serial.println(huskySaw);
-      carSpeed = min(1.1 * carSpeed , MaxSpeed);
-      break;
-
-    default:
-
-      // Handle unknown command
-      // Serial.print(huskySaw);
-      break;
-  }
-}
-
-
-
-
 // Functions needed for Movement
 
 // Mapping speed to PWM values
@@ -364,7 +255,7 @@ int mapSpeedToPWM(float speed) {
 
 // Function to move the car forward at a specified speed
 void moveForwardatSpeed(float speed) {
-  // Serial.println("Inside Move It function: Moving forward at ");
+  // Serial.print("Moving forward at ");
   // Serial.println(speed);
 
   // Adjust right motor PWM based on the specified speed
@@ -421,8 +312,6 @@ void turnRight() {
   digitalWrite(LeftMotorSwitchActive, HIGH);
 }
 
-
-
 // Sensor Functions
 
 // Function to measure the closest obstacle distance using the ultrasonic sensor
@@ -442,8 +331,8 @@ float closestObstacleUsingSonar() {
   // Deactivate the trigger pulse
   digitalWrite(UltrasonicTrigger, LOW);
 
-  // Measure the duration of the pulse , only wait for 2000 microseconds
-  unsigned long pulseDuration = pulseIn(UltrasonicEchoDetector, HIGH, 2000);
+  // Measure the duration of the pulse , only wait for 3000 microseconds
+  unsigned long pulseDuration = pulseIn(UltrasonicEchoDetector, HIGH, 3000);
 
   // Convert the pulse duration to distance using the speed of sound
   // Return the distance or Overtime if no pulse received within 2 seconds
@@ -467,13 +356,14 @@ void checkPositionRelativeToObject() {
     stopCar();
 
     return;
+    
   } else {
     obstacleTooClose = false;
 
     if (currentMode == MODE_1) {
 
 
-      carSpeed = min(MaxSpeed, (carSpeed * (49 + (nearestObstacleDistance / ObjectFollowingDistance)) / 50));
+      carSpeed = min(MaxSpeed, (carSpeed * (19 + (nearestObstacleDistance / ObjectFollowingDistance)) / 20));
 
       // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeed));
     }
@@ -545,7 +435,9 @@ void setup() {
   matrix.begin();  // Initialize the LED matrix for further use
 
   // Setup Connection
-  Serial.println("Inside Setup befor connection");
+  // Serial.println("Inside Setup befor connection");
+
+  Serial.println("Setting up!");
 
   connectionSetup();
 
@@ -555,7 +447,7 @@ void setup() {
   //attachInterrupt( digitalPinToInterrupt(RightEncoder), left_encoder, CHANGE);
   //attachInterrupt( digitalPinToInterrupt(LeftEncoder), right_encoder, CHANGE);
 
-  Serial.println("1 Inside Setup 2");
+  // Serial.println("1 Inside Setup 2");
 
   attachInterrupt(
     digitalPinToInterrupt(RightEncoder), []() {
@@ -568,7 +460,8 @@ void setup() {
     },
     RISING);
 
-  Serial.println(" 4 Inside Setup 3");
+
+  // Serial.println(" 4 Inside Setup 3");
 
   while (!ProcessingClient.connected()) {
     // Attempt to accept an incoming client connection on the WiFi server
@@ -590,16 +483,38 @@ void loop() {
 
   // Serial.println("starting loop");  // Optional debugging statement
   if (loopCounter % 17 == 0) {
+
     checkServer();
-  }
 
-  if (loopCounter % 21 == 0) {
-    askHusky();
-  }
+  } else if (loopCounter % 25 == 0) {
 
-  if (loopCounter % 25 == 0) {
     checkPositionRelativeToObject();
+
+  } else if (loopCounter % 35 == 0) {
+
+    askHusky();
+
+  } else if (loopCounter == 100) {
+
+    // Execute obstacle tracking logic
+    // Serial.print("Got into the 25th loop");
+    distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
+
+
+    message = "Distance travelled: " + String(int(distanceTravelledByTheCar))
+              + " Speed: " + String(int(carSpeed))
+              + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) : " No Object")
+              + " Current mode: " + ((currentMode) ? "Mode2 \n" : "Mode1 \n");
+
+
+    Serial.println(message);
+    ProcessingClient.write(message.c_str(), message.length());
+
+    // Reset the loop counter for the next iteration
+
+    loopCounter = 0;
   }
+
 
 
   // Serial.println("Is the obstacleTooClose?");  // Optional debugging statement
@@ -620,26 +535,158 @@ void loop() {
     checkPositionRelativeToObject();
   }
 
-  if (loopCounter == 100) {
-    // Execute obstacle tracking logic
-    // Serial.print("Got into the 25th loop");
-    distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
-
-
-    message = "Distance dravelled: " + String(distanceTravelledByTheCar)
-              + " \n Nearest Object: " + ((nearestObstacleDistance != 100) ? String(nearestObstacleDistance) : "Too far away! \n" + '\n');
-
-    ProcessingClient.write(message.c_str(), message.length());
-
-    // Reset the loop counter for the next iteration
-
-    loopCounter = 0;
-  }
-
-  // Increment the loop counter for each iteration
+  // Increment the loop counter for each iterationf
   loopCounter++;
 
   // Serial.println("end of loop");
 }
 
 // End
+
+
+// HUSKY LENS
+
+HUSKYLENS huskylens;
+
+// Define an enumeration for Tags
+enum TAG {
+  TAG_1,  //Start
+  TAG_2,  //Stop
+  TAG_3,  //heart
+  TAG_4,  //Smiley
+  TAG_5,  //W5
+  TAG_6,  //Slow Down
+  TAG_7,  //Speed UP
+  TAG_8,  //Turn Left
+  TAG_9   //Turn Right
+};
+
+// Setup Husky Lens
+
+void huskyLensSetup() {
+
+  // Initialize the I2C communication bus
+  Wire.begin();
+
+  // Attempt to initialize communication with the Huskylens using I2C
+  while (!huskylens.begin(Wire)) {
+    // Print a failure message to the Serial Monitor
+    Serial.println(F("Begin failed!"));
+
+    // Provide troubleshooting suggestions
+    Serial.println(F("1. Please recheck the \"Protocol Type\" in HUSKYLENS (General Settings>>Protocol Type>>I2C)"));
+    Serial.println(F("2. Please recheck the connection."));
+
+    // Introduce a brief delay before retrying initialization
+    delay(1000);
+  }
+
+  if (!huskylens.isLearned()) {
+    Serial.println("Nothing learned, teach me first !");
+  }
+}
+
+
+
+void printResult(HUSKYLENSResult result) {
+
+  if (result.command == COMMAND_RETURN_BLOCK) {
+
+    Serial.println(String() + F("Block:xCenter=") + result.xCenter + F(",yCenter=") + result.yCenter + F(",width=") + result.width + F(",height=") + result.height + F(",ID=") + result.ID);
+
+  } else if (result.command == COMMAND_RETURN_ARROW) {
+
+    Serial.println(String() + F("Arrow:xOrigin=") + result.xOrigin + F(",yOrigin=") + result.yOrigin + F(",xTarget=") + result.xTarget + F(",yTarget=") + result.yTarget + F(",ID=") + result.ID);
+
+  } else {
+
+    Serial.println("Object unknown!");
+  }
+}
+
+
+
+void askHusky() {
+
+  // Iterate through all available Huskylens results
+
+  HUSKYLENSResult result;
+
+  if (huskylens.available()) {
+
+    while (huskylens.available()) {
+
+      result = huskylens.read();
+
+      printResult(result);
+
+      TAG huskySaw = static_cast<TAG>(result.ID);
+
+      switch (huskySaw) {
+        case TAG_1:
+          // Serial.println(huskySaw);
+          StopTheCar = false;
+          moveForwardatSpeed(carSpeed);
+          // Serial.println(huskySaw);
+          break;
+
+        case TAG_2:
+          // Serial.println(huskySaw);
+          StopTheCar = true;
+          stopCar();
+          break;
+          ProcessingClient.write("Switching to Mode 2!" + '\n');
+
+          currentMode = MODE_2;
+          break;
+
+        case TAG_3:
+          // Serial.println(huskySaw);
+          displayHeart();
+          break;
+
+        case TAG_4:
+          // Serial.println(huskySaw);
+          displaySmiley();
+          break;
+
+        case TAG_5:
+
+          // Serial.println(huskySaw);
+          displayW5();
+          break;
+
+        case TAG_6:
+
+          // Serial.println(huskySaw);
+          carSpeed *= 0.9;
+          break;
+
+        case TAG_7:
+
+          // Serial.println(huskySaw);
+          carSpeed = min(1.1 * carSpeed, MaxSpeed);
+          break;
+
+        case TAG_8:
+
+          turnLeft();
+          break;
+
+        case TAG_9:
+
+          turnRight();
+          break;
+
+        default:
+
+          // Handle unknown command
+          // Serial.print(huskySaw);
+          break;
+      }
+    }
+
+  } else {
+    Serial.println("Nothing seen");
+  }
+}

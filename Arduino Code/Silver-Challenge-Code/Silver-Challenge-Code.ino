@@ -40,29 +40,29 @@ unsigned long rightPulseCount = 0;  // Pulse count for the right motor encoder
 
 // Constants
 const float RightWheelCoefficient = 1;    // Coefficient for adjusting Right wheel speed
-const float LeftWheelCoefficient = 0.95;  // Coefficient for adjusting left wheel speed
+const float LeftWheelCoefficient = 0.92;  // Coefficient for adjusting left wheel speed
 // const int FrequencyOfTracking = 50;         // Frequency of obstacle tracking in the main loop
 const float MinSpeed = 0;                      // Minimum speed scale for the car
 const float MaxSpeed = 100;                    // Maximum speed scale for the car
 const int PWMMin = 0;                          // Minimum PWM value
-const int PWMMax = 130;                        // Maximum PWM value (capping it at 125 instead of 225)
-const int TurnSpeedOuter = 95;                 // Turning speed for outer wheel
+const int PWMMax = 140;                        // Maximum PWM value (capping it at 140 instead of 225)
+const int TurnSpeedOuter = 100;                // Turning speed for outer wheel
 const int TurnSpeedInner = 30;                 // Turning speed for inner wheel
 const int EncoderPulsesPerRevolution = 8;      // Encoder generates 8 pulses per revolution
-const int CriticalObjectDistance = 15;         // Critical distance for detecting obstacles
-const int ObjectFollowingDistance = 20;        // A slightly larger and safer distance
+const int CriticalObjectDistance = 2;          // Critical distance for detecting obstacles
+const int ObjectFollowingDistance = 30;        // A slightly larger and safer distance
 const int Overtime = 100;                      // Return this when sonar takes too long
 const float SPEED_OF_SOUND_CM_PER_MS = 0.017;  // Conversion factor for microseconds to distance
 const float radiusOfWheel = 3.24;              // radius of wheel in cm
 
 
 // more variables
-float nearestObstacleDistance;  // Distance to the nearest obstacle from ultrasonic sensor
-bool obstacleTooClose = false;  // Flag indicating if an obstacle is too close
-float carSpeed = MaxSpeed;      // Current speed of the car
-unsigned int loopCounter = 0;   // Counter for obstacle tracking frequency
-bool StopTheCar = false;        // Control if you want the car to move
-String message;                 // Message to send to the client
+float nearestObstacleDistance = 100;  // Distance to the nearest obstacle from ultrasonic sensor
+bool obstacleTooClose = false;        // Flag indicating if an obstacle is too close
+float carSpeed = MaxSpeed;            // Current speed of the car
+unsigned long loopCounter = 0;        // Counter for obstacle tracking frequency
+bool StopTheCar = false;              // Control if you want the car to move
+String message;                       // Message to send to the client
 
 // How far have the wheels spun (in cm)
 float distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
@@ -82,8 +82,8 @@ Modes currentMode = MODE_1;
 // Wifi
 
 // Wifi Details
-char ssid[] = "WIFI";
-char pass[] = "PASSWORD";
+char ssid[] = "Wifi";
+char pass[] = "Pass";
 
 // Declare an instance of the WiFiServer class named 'server'
 WiFiServer server(5200);
@@ -119,7 +119,7 @@ void checkServer() {
   // Serial.print('_');
 
   // Send a "Hello Client" message to the connected client
-  //client.write("Hello Client");
+  //("Hello Client");
 
   // Serial.print("Client is connected!");
   char data = ProcessingClient.read();
@@ -140,12 +140,12 @@ void checkServer() {
 
     case mode1URL:
       currentMode = MODE_1;
-      ProcessingClient.write("Switching to Mode 1!" + '\n');
+      ProcessingClient.write("NOW Mode 1!" + '\n');
 
       break;
 
     case mode2URL:
-      ProcessingClient.write("Switching to Mode 2!" + '\n');
+      ProcessingClient.write("NOW Mode 2!" + '\n');
 
       currentMode = MODE_2;
       break;
@@ -251,7 +251,7 @@ int mapSpeedToPWM(float speed) {
 
 // Function to move the car forward at a specified speed
 void moveForwardatSpeed(float speed) {
-  // Serial.println("Inside Move It function: Moving forward at ");
+  // Serial.print("Moving forward at ");
   // Serial.println(speed);
 
   // Adjust right motor PWM based on the specified speed
@@ -327,8 +327,8 @@ float closestObstacleUsingSonar() {
   // Deactivate the trigger pulse
   digitalWrite(UltrasonicTrigger, LOW);
 
-  // Measure the duration of the pulse , only wait for 2000 microseconds
-  unsigned long pulseDuration = pulseIn(UltrasonicEchoDetector, HIGH, 2000);
+  // Measure the duration of the pulse , only wait for 3000 microseconds
+  unsigned long pulseDuration = pulseIn(UltrasonicEchoDetector, HIGH, 3000);
 
   // Convert the pulse duration to distance using the speed of sound
   // Return the distance or Overtime if no pulse received within 2 seconds
@@ -358,7 +358,7 @@ void checkPositionRelativeToObject() {
     if (currentMode == MODE_1) {
 
 
-      carSpeed = min(MaxSpeed, (carSpeed * (49 + (nearestObstacleDistance / ObjectFollowingDistance)) / 50));
+      carSpeed = min(MaxSpeed, (carSpeed * (19 + (nearestObstacleDistance / ObjectFollowingDistance)) / 20));
 
       // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeed));
     }
@@ -430,7 +430,9 @@ void setup() {
   matrix.begin();  // Initialize the LED matrix for further use
 
   // Setup Connection
-  Serial.println("Inside Setup befor connection");
+  // Serial.println("Inside Setup befor connection");
+
+  Serial.println("Setting up!");
 
   connectionSetup();
 
@@ -440,7 +442,7 @@ void setup() {
   //attachInterrupt( digitalPinToInterrupt(RightEncoder), left_encoder, CHANGE);
   //attachInterrupt( digitalPinToInterrupt(LeftEncoder), right_encoder, CHANGE);
 
-  Serial.println("1 Inside Setup 2");
+  // Serial.println("1 Inside Setup 2");
 
   attachInterrupt(
     digitalPinToInterrupt(RightEncoder), []() {
@@ -453,7 +455,8 @@ void setup() {
     },
     RISING);
 
-  Serial.println(" 4 Inside Setup 3");
+
+  // Serial.println(" 4 Inside Setup 3");
 
   while (!ProcessingClient.connected()) {
     // Attempt to accept an incoming client connection on the WiFi server
@@ -474,12 +477,48 @@ void loop() {
   // Serial.print('.');
 
   // Serial.println("starting loop");  // Optional debugging statement
-  if (loopCounter % 17 == 0) {
-    checkServer();
-  }
+  if (loopCounter % 29 == 0) {
 
-  if (loopCounter % 25 == 0) {
+    checkServer();
+
+  } else if (loopCounter % 32 == 0) {
+
     checkPositionRelativeToObject();
+
+  } else if (loopCounter == 500) {
+
+    // Execute obstacle tracking logic
+    // Serial.print("Got into the 25th loop");
+
+    distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
+
+    /*
+
+    message = "Distance travelled: " + String(int(distanceTravelledByTheCar))
+              + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) + "\n" : " No Object \n");
+
+
+    // Serial.println(message);
+    ProcessingClient.write(message.c_str(), message.length());
+
+    */
+
+
+    // End
+    message = "Distance travelled: " + String(int(distanceTravelledByTheCar))
+              + " Speed: " + String(int(carSpeed))
+              + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) : " No Object")
+              + " Current mode: " + ((currentMode) ? "Mode2 \n" : "Mode1 \n");
+
+
+    // Serial.println(message);
+
+    ProcessingClient.write(message.c_str(), message.length());
+
+
+    // Reset the loop counter for the next iteration
+
+    loopCounter = 0;
   }
 
 
@@ -501,26 +540,10 @@ void loop() {
     checkPositionRelativeToObject();
   }
 
-  if (loopCounter == 100) {
-    // Execute obstacle tracking logic
-    // Serial.print("Got into the 25th loop");
-    distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
 
-
-    message = "Distance dravelled: " + String(distanceTravelledByTheCar)
-              + " \n Nearest Object: " + ((nearestObstacleDistance != 100) ? String(nearestObstacleDistance) : "Too far away! \n" + '\n');
-
-    ProcessingClient.write(message.c_str(), message.length());
-
-    // Reset the loop counter for the next iteration
-
-    loopCounter = 0;
-  }
 
   // Increment the loop counter for each iteration
   loopCounter++;
 
   // Serial.println("end of loop");
 }
-
-// End
