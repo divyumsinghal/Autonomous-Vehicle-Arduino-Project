@@ -6,8 +6,8 @@
 #define displayHeartURL 'H'
 #define displaySmileyURL 'S'
 #define displayW5URL 'W'
-#define mode1URL 'A'
-#define mode2URL 'B'
+
+
 
 // Include the library for handling an LED matrix
 #include "Arduino_LED_Matrix.h"
@@ -39,51 +39,36 @@ unsigned long leftPulseCount = 0;   // Pulse count for the left motor encoder
 unsigned long rightPulseCount = 0;  // Pulse count for the right motor encoder
 
 // Constants
-const float RightWheelCoefficient = 1;    // Coefficient for adjusting Right wheel speed
-const float LeftWheelCoefficient = 0.95;  // Coefficient for adjusting left wheel speed
-// const int FrequencyOfTracking = 50;         // Frequency of obstacle tracking in the main loop
+const float RightWheelCoefficient = 1;         // Coefficient for adjusting Right wheel speed
+const float LeftWheelCoefficient = 0.92;       // Coefficient for adjusting left wheel speed
 const float MinSpeed = 0;                      // Minimum speed scale for the car
 const float MaxSpeed = 100;                    // Maximum speed scale for the car
 const int PWMMin = 0;                          // Minimum PWM value
-const int PWMMax = 130;                        // Maximum PWM value (capping it at 125 instead of 225)
-const int TurnSpeedOuter = 95;                 // Turning speed for outer wheel
+const int PWMMax = 135;                        // Maximum PWM value (capping it at 135 instead of 225)
+const int TurnSpeedOuter = 100;                // Turning speed for outer wheel
 const int TurnSpeedInner = 30;                 // Turning speed for inner wheel
-const int EncoderPulsesPerRevolution = 8;      // Encoder generates 8 pulses per revolution
-const int CriticalObjectDistance = 15;         // Critical distance for detecting obstacles
-const int ObjectFollowingDistance = 20;        // A slightly larger and safer distance
+const int EncoderPulsesPerRevolution = 4;      // Encoder generates 8 pulses per revolution -> 4 rising
+const int CriticalObjectDistance = 25;         // Critical distance for detecting obstacles
 const int Overtime = 100;                      // Return this when sonar takes too long
 const float SPEED_OF_SOUND_CM_PER_MS = 0.017;  // Conversion factor for microseconds to distance
-const float radiusOfWheel = 3.24;              // radius of wheel in cm
+const float radiusOfWheel = 3.5;               // radius of wheel in cm
 
 
 // more variables
-float nearestObstacleDistance;  // Distance to the nearest obstacle from ultrasonic sensor
-bool obstacleTooClose = false;  // Flag indicating if an obstacle is too close
-float carSpeed = MaxSpeed;      // Current speed of the car
-unsigned int loopCounter = 0;   // Counter for obstacle tracking frequency
-bool StopTheCar = false;        // Control if you want the car to move
-String message;                 // Message to send to the client
-
-// How far have the wheels spun (in cm)
-float distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
-
-
-
-
-
-
-
-
-
-
-
+float nearestObstacleDistance = 100;                                                                                        // Distance to the nearest obstacle from ultrasonic sensor
+bool obstacleTooClose = false;                                                                                              // Flag indicating if an obstacle is too close
+float carSpeed = MaxSpeed;                                                                                                  // Current speed of the car
+unsigned long loopCounter = 0;                                                                                              // Counter for obstacle tracking frequency
+bool StopTheCar = false;                                                                                                    // Control if you want the car to move
+String message;                                                                                                             // Message to send to the client
+float distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;  // How far have the wheels spun (in cm)
 
 
 // Wifi
 
 // Wifi Details
-char ssid[] = "WIFI";
-char pass[] = "PASSWORD";
+char ssid[] = "2E10_AP02";
+char pass[] = "TinLizzy";
 
 // Declare an instance of the WiFiServer class named 'server'
 WiFiServer server(5200);
@@ -119,7 +104,7 @@ void checkServer() {
   // Serial.print('_');
 
   // Send a "Hello Client" message to the connected client
-  //client.write("Hello Client");
+  //("Hello Client");
 
   // Serial.print("Client is connected!");
   char data = ProcessingClient.read();
@@ -137,18 +122,6 @@ void checkServer() {
       StopTheCar = true;
       stopCar();
       break;
-
-
-
-
-
-
-
-
-
-
-
-
 
     case displayHeartURL:
       // Serial.println(data);
@@ -168,14 +141,6 @@ void checkServer() {
     default:
       // Handle unknown command
       // Serial.print(data);
-
-
-
-
-
-
-
-
       break;
   }
 }
@@ -239,19 +204,19 @@ void displayW5() {
 
 // Mapping speed to PWM values
 int mapSpeedToPWM(float speed) {
-  int PWMValue = map(speed, MinSpeed, MaxSpeed, PWMMin, PWMMax);
+  int PWMValue = round(map(speed, MinSpeed, MaxSpeed, PWMMin, PWMMax));
 
   // Serial.println("Speed: ");
   // Serial.println(speed);
   // Serial.println(" | Mapped PWM: ");
   // Serial.println(floor(PWMValue));
 
-  return round(PWMValue);
+  return PWMValue;
 }
 
 // Function to move the car forward at a specified speed
 void moveForwardatSpeed(float speed) {
-  // Serial.println("Inside Move It function: Moving forward at ");
+  // Serial.print("Moving forward at ");
   // Serial.println(speed);
 
   // Adjust right motor PWM based on the specified speed
@@ -322,13 +287,13 @@ float closestObstacleUsingSonar() {
   digitalWrite(UltrasonicTrigger, HIGH);
 
   // Keep the trigger pulse active for a specific duration
-  delayMicroseconds(5);
+  delayMicroseconds(10);
 
   // Deactivate the trigger pulse
   digitalWrite(UltrasonicTrigger, LOW);
 
-  // Measure the duration of the pulse , only wait for 2000 microseconds
-  unsigned long pulseDuration = pulseIn(UltrasonicEchoDetector, HIGH, 2000);
+  // Measure the duration of the pulse , only wait for 6000 microseconds
+  unsigned long pulseDuration = pulseIn(UltrasonicEchoDetector, HIGH, 6000);
 
   // Convert the pulse duration to distance using the speed of sound
   // Return the distance or Overtime if no pulse received within 2 seconds
@@ -352,18 +317,15 @@ void checkPositionRelativeToObject() {
     stopCar();
 
     return;
+
   } else {
 
-
-
-
-
-
-
-
     obstacleTooClose = false;
+
+    // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeed));
   }
 }
+
 
 // Keeping the car moving while checking infrared sensors for tracking
 void keepMovingCheckingIRSensors() {
@@ -375,19 +337,19 @@ void keepMovingCheckingIRSensors() {
   // Serial.println(irLeftValue);
   // Serial.println(irRightValue);
 
-  if (irLeftValue == LOW) {
+  if (irLeftValue == LOW && irRightValue == HIGH) {
 
-    // Serial.println("Left sensor off track - turning right");
+    // Serial.println("Left sensor off track - turning left");
 
-    // If left sensor is off track, turn right
+    // If left sensor is off track, turn left
 
     turnLeft();
 
-  } else if (irRightValue == LOW) {
+  } else if (irLeftValue == HIGH && irRightValue == LOW) {
 
-    // Serial.println("Right sensor off track - turning left");
+    // Serial.println("Right sensor off track - turning Right");
 
-    // If right sensor is off track, turn left
+    // If right sensor is off track, turn Right
 
     turnRight();
 
@@ -417,30 +379,30 @@ void setup() {
   pinMode(RightMotorSwitch1, OUTPUT);      // Configure the right motor control pin 1 as an output
   pinMode(RightMotorSwitch2, OUTPUT);      // Configure the right motor control pin 2 as an output
 
-  digitalWrite(RightMotorSwitch1, LOW);  // Initially set motor to swtiched off
+  digitalWrite(RightMotorSwitch1, LOW);   // Initially set both motors to be swtiched off
   digitalWrite(RightMotorSwitch2, LOW);
   digitalWrite(LeftMotorSwitch3, LOW);
   digitalWrite(LeftMotorSwitch4, LOW);
 
   pinMode(LeftMotorPWM, OUTPUT);        // Configure the left motor PWM pin as an output
   pinMode(RightMotorPWM, OUTPUT);       // Configure the right motor PWM pin as an output
-  pinMode(LeftEncoder, INPUT_PULLUP);   // Configure the left motor encoder pin with pull-up resistor enabled
+  pinMode(LeftEncoder, INPUT_PULLUP);   // Configure the left motor encoder pin with pull-up resistor enabled & logic inversion (a 20 k resistor in parallel for impedence control)
   pinMode(RightEncoder, INPUT_PULLUP);  // Configure the right motor encoder pin with pull-up resistor enabled
 
   matrix.begin();  // Initialize the LED matrix for further use
 
   // Setup Connection
-  Serial.println("Inside Setup befor connection");
+  // Serial.println("Inside Setup befor connection");
+
+  Serial.println("Setting up!");
 
   connectionSetup();
 
   // Serial.println("Inside Setup afer connection");
 
-  // Interrupts-> moved to the setup function
-  //attachInterrupt( digitalPinToInterrupt(RightEncoder), left_encoder, CHANGE);
-  //attachInterrupt( digitalPinToInterrupt(LeftEncoder), right_encoder, CHANGE);
+  // Interrupts
 
-  Serial.println("1 Inside Setup 2");
+  // Serial.println("1 Inside Setup 2");
 
   attachInterrupt(
     digitalPinToInterrupt(RightEncoder), []() {
@@ -453,7 +415,8 @@ void setup() {
     },
     RISING);
 
-  Serial.println(" 4 Inside Setup 3");
+
+  // Serial.println(" 4 Inside Setup 3");
 
   while (!ProcessingClient.connected()) {
     // Attempt to accept an incoming client connection on the WiFi server
@@ -474,12 +437,48 @@ void loop() {
   // Serial.print('.');
 
   // Serial.println("starting loop");  // Optional debugging statement
-  if (loopCounter % 17 == 0) {
-    checkServer();
-  }
+  if (loopCounter % 29 == 0) {
 
-  if (loopCounter % 25 == 0) {
+    checkServer();
+
+  } else if (loopCounter % 32 == 0) {
+
     checkPositionRelativeToObject();
+
+  } else if (loopCounter == 500) {
+
+    // Execute obstacle tracking logic
+    // Serial.print("Got into the 25th loop");
+
+    distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
+    
+
+    message = "Distance travelled: " + String(int(distanceTravelledByTheCar))
+              + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) + "\n" : " No Object \n");
+
+
+    // Serial.println(message);
+    ProcessingClient.write(message.c_str(), message.length());
+
+    
+
+    /*
+
+    message = "Distance travelled: " + String(int((leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution))
+              + " Left travelled: " + String(int((leftPulseCount)*3.142 * radiusOfWheel / EncoderPulsesPerRevolution))
+              + " Right travelled: " + String(int((rightPulseCount)*3.142 * radiusOfWheel / EncoderPulsesPerRevolution))
+              + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) + "\n" : " No Object \n");
+
+
+    */
+
+    // Serial.println(message);
+    ProcessingClient.write(message.c_str(), message.length());
+
+
+    // Reset the loop counter for the next iteration
+
+    loopCounter = 0;
   }
 
 
@@ -501,21 +500,7 @@ void loop() {
     checkPositionRelativeToObject();
   }
 
-  if (loopCounter == 100) {
-    // Execute obstacle tracking logic
-    // Serial.print("Got into the 25th loop");
-    distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
 
-
-    message = "Distance dravelled: " + String(distanceTravelledByTheCar)
-              + " \n Nearest Object: " + ((nearestObstacleDistance != 100) ? String(nearestObstacleDistance) : "Too far away! \n" + '\n');
-
-    ProcessingClient.write(message.c_str(), message.length());
-
-    // Reset the loop counter for the next iteration
-
-    loopCounter = 0;
-  }
 
   // Increment the loop counter for each iteration
   loopCounter++;
@@ -524,3 +509,17 @@ void loop() {
 }
 
 // End
+
+/*
+
+int main ()
+{
+  setup ();
+
+  while (true)
+  {
+    loop();
+  }
+}
+
+*/

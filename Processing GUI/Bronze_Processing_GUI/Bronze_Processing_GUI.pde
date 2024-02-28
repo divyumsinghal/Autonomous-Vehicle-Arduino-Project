@@ -1,6 +1,8 @@
 // Import the ControlP5 and processing.net libraries
 import controlP5.*;
 
+// 141 127
+
 // Declare ControlP5 object
 ControlP5 cp5;
 
@@ -10,7 +12,7 @@ import processing.net.*;
 Client myClient;
 
 // Arduino's IP address (replace with actual IP address)
-String serverAddress = "192.168.0.25";
+String serverAddress = "192.168.0.120";
 
 // String to store received data from the Arduino
 String data;
@@ -27,9 +29,12 @@ boolean StopStart = false;
 // Setup function called once at the beginning
 void setup()
 {
-
+  println("Setting Up");
+  
   // Initialize client for communication with Arduino
   myClient = new Client(this, serverAddress, 5200);
+  
+  println("Connected");
 
   // Set the size of the Processing window
   size(500, 600);
@@ -111,7 +116,7 @@ void draw()
       println(data);
     }
     */ 
-    
+        
   };
 
 
