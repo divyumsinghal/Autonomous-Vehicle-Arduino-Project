@@ -44,7 +44,7 @@ const float LeftWheelCoefficient = 0.92;       // Coefficient for adjusting left
 const float MinSpeed = 0;                      // Minimum speed scale for the car
 const float MaxSpeed = 100;                    // Maximum speed scale for the car
 const int PWMMin = 0;                          // Minimum PWM value
-const int PWMMax = 125;                        // Maximum PWM value (capping it at 135 instead of 225)
+const int PWMMax = 125;                        // Maximum PWM value (capping it at 125 instead of 225)
 const int TurnSpeedOuter = 100;                // Turning speed for outer wheel
 const int TurnSpeedInner = 30;                 // Turning speed for inner wheel
 const int EncoderPulsesPerRevolution = 4;      // Encoder generates 8 pulses per revolution -> 4 rising
@@ -67,8 +67,8 @@ float distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * r
 // Wifi
 
 // Wifi Details
-char ssid[] = "2E10_AP02";
-char pass[] = "TinLizzy";
+char ssid[] = "HONORMAGIC";
+char pass[] = "11111111";
 
 // Declare an instance of the WiFiServer class named 'server'
 WiFiServer server(5200);
@@ -406,7 +406,7 @@ void setup() {
 
   attachInterrupt(
     digitalPinToInterrupt(RightEncoder), []() {
-      rightPulseCount++;
+      rightPulse                                                                                                                                          Count++;
     },
     RISING);
   attachInterrupt(

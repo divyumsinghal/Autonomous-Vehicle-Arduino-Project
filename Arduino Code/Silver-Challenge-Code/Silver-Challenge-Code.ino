@@ -308,6 +308,11 @@ void turnRight() {
   digitalWrite(LeftMotorSwitchActive, HIGH);
 }
 
+// PID
+
+double PIDSpeed() {
+  return min(MaxSpeed, (carSpeed * (19 + (nearestObstacleDistance / ObjectFollowingDistance)) / 20));
+}
 // Sensor Functions
 
 // Function to measure the closest obstacle distance using the ultrasonic sensor
@@ -358,7 +363,7 @@ void checkPositionRelativeToObject() {
     if (currentMode == MODE_1) {
 
 
-      carSpeed = min(MaxSpeed, (carSpeed * (19 + (nearestObstacleDistance / ObjectFollowingDistance)) / 20));
+      carSpeed = PIDSpeed();
 
       // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeed));
     }
