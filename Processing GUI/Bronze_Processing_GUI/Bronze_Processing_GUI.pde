@@ -12,7 +12,7 @@ import processing.net.*;
 Client myClient;
 
 // Arduino's IP address (replace with actual IP address)
-String serverAddress = "192.168.214.74";
+String serverAddress = "192.168.4.1";
 
 // String to store received data from the Arduino
 String data;
