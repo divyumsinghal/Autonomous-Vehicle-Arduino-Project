@@ -39,21 +39,20 @@ unsigned long leftPulseCount = 0;   // Pulse count for the left motor encoder
 unsigned long rightPulseCount = 0;  // Pulse count for the right motor encoder
 
 // Constants
-const float RightWheelCoefficient = 1;    // Coefficient for adjusting Right wheel speed
-const float LeftWheelCoefficient = 0.92;  // Coefficient for adjusting left wheel speed
-// const int FrequencyOfTracking = 50;         // Frequency of obstacle tracking in the main loop
+const float RightWheelCoefficient = 1;         // Coefficient for adjusting Right wheel speed
+const float LeftWheelCoefficient = 0.92;       // Coefficient for adjusting left wheel speed
 const float MinSpeed = 0;                      // Minimum speed scale for the car
 const float MaxSpeed = 100;                    // Maximum speed scale for the car
-const int PWMMin = 0;                          // Minimum PWM value
-const int PWMMax = 140;                        // Maximum PWM value (capping it at 140 instead of 225)
+const int PWMMin = 50;                         // Minimum PWM value (capping it at 50 instead of 225)
+const int PWMMax = 130;                        // Maximum PWM value (capping it at 130 instead of 225)
 const int TurnSpeedOuter = 100;                // Turning speed for outer wheel
 const int TurnSpeedInner = 30;                 // Turning speed for inner wheel
-const int EncoderPulsesPerRevolution = 8;      // Encoder generates 8 pulses per revolution
-const int CriticalObjectDistance = 2;          // Critical distance for detecting obstacles
-const int ObjectFollowingDistance = 30;        // A slightly larger and safer distance
+const int EncoderPulsesPerRevolution = 4;      // Encoder generates 8 pulses per revolution -> 4 rising
+const int CriticalObjectDistance = 10;         // Critical distance for detecting obstacles
+const int ObjectFollowingDistance = 25;        // A slightly larger and safer distance
 const int Overtime = 100;                      // Return this when sonar takes too long
 const float SPEED_OF_SOUND_CM_PER_MS = 0.017;  // Conversion factor for microseconds to distance
-const float radiusOfWheel = 3.24;              // radius of wheel in cm
+const float radiusOfWheel = 3.5;               // radius of wheel in cm
 
 
 // more variables
@@ -67,6 +66,8 @@ String message;                       // Message to send to the client
 // How far have the wheels spun (in cm)
 float distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
 
+
+// MODES
 
 // Define an enumeration for modes
 enum Modes {
@@ -82,8 +83,8 @@ Modes currentMode = MODE_1;
 // Wifi
 
 // Wifi Details
-char ssid[] = "Wifi";
-char pass[] = "Pass";
+char ssid[] = "wifi";
+char pass[] = "password";
 
 // Declare an instance of the WiFiServer class named 'server'
 WiFiServer server(5200);
@@ -180,7 +181,71 @@ void checkServer() {
   }
 }
 
+// PID
 
+// Define PID constants
+const float Kp = 0.1;     // Proportional gain
+const float Ki = 0.01;    // Integral gain
+const float Kd = 0.0005;  // Derivative gain
+
+// Define variables
+float previousError = 0;
+float integral = 0;
+float differential = 0;
+float currentTime = millis();
+float previousTime = millis();
+float elapsedTime = 0;
+
+// Define function
+float PIDSpeed() {
+
+  // Time
+  currentTime = millis();
+  elapsedTime = float(currentTime - previousTime);
+
+  // Calculate error
+  float error = nearestObstacleDistance - ObjectFollowingDistance;
+
+  // Update integral
+  integral += error * elapsedTime;
+
+  // Update differential
+  differential = (error - previousError) / elapsedTime;
+
+  // Calculate control signal
+  float controlSignal = Kp * error + Ki * integral + Kd * differential;
+
+  // Update previous error & time
+  previousError = error;
+  previousTime = currentTime;
+
+  // Calculate next speed
+  float nextSpeed = carSpeed + controlSignal;
+
+  // Ensure the next speed is within bounds
+  nextSpeed = constrain(nextSpeed, MinSpeed, MaxSpeed);
+
+  Serial.println("currentTime = " + String(currentTime) + " \n "
+                 + "previousTime = " + String(previousTime) + " \n "
+                 + "elapsedTime = " + String(elapsedTime) + " \n "
+                 + "error = " + String(error) + " \n "
+                 + "integral = " + String(integral) + " \n "
+                 + "differential = " + String(differential) + " \n "
+                 + "controlSignal = " + String(controlSignal) + " \n "
+                 + "nextSpeed = " + String(nextSpeed) + " \n "
+                 + "                                 " + " \n ");
+
+  return nextSpeed;
+}
+
+/*
+  float PIDSpeed() {
+
+    float nextSpeed = min(MaxSpeed, (carSpeed * (19 + (nearestObstacleDistance / ObjectFollowingDistance)) / 20));
+
+    return nextSpeed;
+  }
+  */
 
 //Matrix Handling
 ArduinoLEDMatrix matrix;
@@ -239,14 +304,14 @@ void displayW5() {
 
 // Mapping speed to PWM values
 int mapSpeedToPWM(float speed) {
-  int PWMValue = map(speed, MinSpeed, MaxSpeed, PWMMin, PWMMax);
+  int PWMValue = round(map(speed, MinSpeed, MaxSpeed, PWMMin, PWMMax));
 
   // Serial.println("Speed: ");
   // Serial.println(speed);
   // Serial.println(" | Mapped PWM: ");
   // Serial.println(floor(PWMValue));
 
-  return round(PWMValue);
+  return PWMValue;
 }
 
 // Function to move the car forward at a specified speed
@@ -287,7 +352,7 @@ void turnLeft() {
   analogWrite(RightMotorPWM, mapSpeedToPWM(RightWheelCoefficient * TurnSpeedOuter));
 
   // Stop the left motor by setting its PWM to 0
-  analogWrite(LeftMotorPWM, mapSpeedToPWM(TurnSpeedInner));
+  analogWrite(LeftMotorPWM, mapSpeedToPWM(LeftWheelCoefficient * TurnSpeedInner));
 
   digitalWrite(RightMotorSwitchActive, HIGH);
   digitalWrite(LeftMotorSwitchActive, HIGH);
@@ -298,7 +363,7 @@ void turnRight() {
   // Serial.println("Inside turnRight - Turning right");
 
   // Stop the right motor by setting its PWM to 0
-  analogWrite(RightMotorPWM, mapSpeedToPWM(TurnSpeedInner));
+  analogWrite(RightMotorPWM, mapSpeedToPWM(RightWheelCoefficient * TurnSpeedInner));
 
   // Adjust the left motor PWM for a right turn
   analogWrite(LeftMotorPWM, mapSpeedToPWM(LeftWheelCoefficient * TurnSpeedOuter));
@@ -308,11 +373,6 @@ void turnRight() {
   digitalWrite(LeftMotorSwitchActive, HIGH);
 }
 
-// PID
-
-double PIDSpeed() {
-  return min(MaxSpeed, (carSpeed * (19 + (nearestObstacleDistance / ObjectFollowingDistance)) / 20));
-}
 // Sensor Functions
 
 // Function to measure the closest obstacle distance using the ultrasonic sensor
@@ -327,13 +387,13 @@ float closestObstacleUsingSonar() {
   digitalWrite(UltrasonicTrigger, HIGH);
 
   // Keep the trigger pulse active for a specific duration
-  delayMicroseconds(5);
+  delayMicroseconds(10);
 
   // Deactivate the trigger pulse
   digitalWrite(UltrasonicTrigger, LOW);
 
-  // Measure the duration of the pulse , only wait for 3000 microseconds
-  unsigned long pulseDuration = pulseIn(UltrasonicEchoDetector, HIGH, 3000);
+  // Measure the duration of the pulse , only wait for 6000 microseconds
+  unsigned long pulseDuration = pulseIn(UltrasonicEchoDetector, HIGH, 6000);
 
   // Convert the pulse duration to distance using the speed of sound
   // Return the distance or Overtime if no pulse received within 2 seconds
@@ -388,7 +448,7 @@ void keepMovingCheckingIRSensors() {
 
     turnLeft();
 
-  } else if (irRightValue == LOW) {
+  } else if (irLeftValue == HIGH && irRightValue == LOW) {
 
     // Serial.println("Right sensor off track - turning left");
 
@@ -443,9 +503,7 @@ void setup() {
 
   // Serial.println("Inside Setup afer connection");
 
-  // Interrupts-> moved to the setup function
-  //attachInterrupt( digitalPinToInterrupt(RightEncoder), left_encoder, CHANGE);
-  //attachInterrupt( digitalPinToInterrupt(LeftEncoder), right_encoder, CHANGE);
+  // Interrupts
 
   // Serial.println("1 Inside Setup 2");
 
@@ -478,38 +536,27 @@ void setup() {
 // Main execution loop function that runs continuously after setup
 
 void loop() {
+
   // Delegate the primary control logic
-  // Serial.print('.');
+  Serial.print('.');
 
   // Serial.println("starting loop");  // Optional debugging statement
-  if (loopCounter % 29 == 0) {
+  if (loopCounter % 31 == 0) {
 
     checkServer();
 
-  } else if (loopCounter % 32 == 0) {
+  } else if (loopCounter % 23 == 0) {
 
     checkPositionRelativeToObject();
 
-  } else if (loopCounter == 500) {
+  } else if (loopCounter % 500 == 0) {
 
     // Execute obstacle tracking logic
-    // Serial.print("Got into the 25th loop");
+    Serial.print("Got into the 500th loop");
 
     distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
 
-    /*
 
-    message = "Distance travelled: " + String(int(distanceTravelledByTheCar))
-              + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) + "\n" : " No Object \n");
-
-
-    // Serial.println(message);
-    ProcessingClient.write(message.c_str(), message.length());
-
-    */
-
-
-    // End
     message = "Distance travelled: " + String(int(distanceTravelledByTheCar))
               + " Speed: " + String(int(carSpeed))
               + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) : " No Object")
@@ -517,7 +564,6 @@ void loop() {
 
 
     // Serial.println(message);
-
     ProcessingClient.write(message.c_str(), message.length());
 
 
@@ -544,8 +590,6 @@ void loop() {
 
     checkPositionRelativeToObject();
   }
-
-
 
   // Increment the loop counter for each iteration
   loopCounter++;
