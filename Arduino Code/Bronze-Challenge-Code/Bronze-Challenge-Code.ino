@@ -49,6 +49,7 @@ const int TurnSpeedOuter = 100;                // Turning speed for outer wheel
 const int TurnSpeedInner = 30;                 // Turning speed for inner wheel
 const int EncoderPulsesPerRevolution = 4;      // Encoder generates 8 pulses per revolution -> 4 rising
 const int CriticalObjectDistance = 25;         // Critical distance for detecting obstacles
+
 const int Overtime = 100;                      // Return this when sonar takes too long
 const float SPEED_OF_SOUND_CM_PER_MS = 0.017;  // Conversion factor for microseconds to distance
 const float radiusOfWheel = 3.5;               // radius of wheel in cm
