@@ -68,8 +68,8 @@ float distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * r
 // Wifi
 
 // Wifi Details
-char ssid[] = "HONORMAGIC";
-char pass[] = "11111111";
+char ssid[] = "wifi";
+char pass[] = "pass";
 
 // Declare an instance of the WiFiServer class named 'server'
 WiFiServer server(5200);
@@ -405,11 +405,13 @@ void setup() {
 
   // Serial.println("1 Inside Setup 2");
 
+
   attachInterrupt(
     digitalPinToInterrupt(RightEncoder), []() {
-      rightPulse                                                                                                                                          Count++;
+      rightPulseCount++;
     },
     RISING);
+
   attachInterrupt(
     digitalPinToInterrupt(LeftEncoder), []() {
       leftPulseCount++;
