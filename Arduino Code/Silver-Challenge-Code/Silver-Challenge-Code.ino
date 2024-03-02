@@ -44,25 +44,25 @@ const double RightWheelCoefficient = 1;         // Coefficient for adjusting Rig
 const double LeftWheelCoefficient = 0.92;       // Coefficient for adjusting left wheel speed
 const double MinSpeed = 0;                      // Minimum speed scale for the car
 const double MaxSpeed = 100;                    // Maximum speed scale for the car
-const int PWMMin = 0;                          // Minimum PWM value
-const int PWMMax = 135;                        // Maximum PWM value (capping it at 135 instead of 225)
-const int TurnSpeedOuter = 100;                // Turning speed for outer wheel
-const int TurnSpeedInner = 30;                 // Turning speed for inner wheel
-const int EncoderPulsesPerRevolution = 4;      // Encoder generates 8 pulses per revolution -> 4 rising
-const int CriticalObjectDistance = 10;         // Critical distance for detecting obstacles
-const int ObjectFollowingDistance = 20;        // A slightly larger and safer distance
-const int Overtime = 100;                      // Return this when sonar takes too long
+const int PWMMin = 0;                           // Minimum PWM value
+const int PWMMax = 225;                         // Maximum PWM value (capping it at 135 instead of 225)
+const int TurnSpeedOuter = 100;                 // Turning speed for outer wheel
+const int TurnSpeedInner = 30;                  // Turning speed for inner wheel
+const int EncoderPulsesPerRevolution = 4;       // Encoder generates 8 pulses per revolution -> 4 rising
+const int CriticalObjectDistance = 10;          // Critical distance for detecting obstacles
+const int ObjectFollowingDistance = 25;         // A slightly larger and safer distance
+const int Overtime = 100;                       // Return this when sonar takes too long
 const double SPEED_OF_SOUND_CM_PER_MS = 0.017;  // Conversion factor for microseconds to distance
 const double radiusOfWheel = 3.5;               // radius of wheel in cm
 
 
 // more variables
 double nearestObstacleDistance = 100;                                                                                        // Distance to the nearest obstacle from ultrasonic sensor
-bool obstacleTooClose = false;                                                                                              // Flag indicating if an obstacle is too close
+bool obstacleTooClose = false;                                                                                               // Flag indicating if an obstacle is too close
 double carSpeed = MaxSpeed;                                                                                                  // Current speed of the car
-unsigned long loopCounter = 0;                                                                                              // Counter for obstacle tracking frequency
-bool StopTheCar = false;                                                                                                    // Control if you want the car to move
-String message;                                                                                                             // Message to send to the client
+unsigned long loopCounter = 0;                                                                                               // Counter for obstacle tracking frequency
+bool StopTheCar = false;                                                                                                     // Control if you want the car to move
+String message;                                                                                                              // Message to send to the client
 double distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;  // How far have the wheels spun (in cm)
 
 
@@ -183,14 +183,16 @@ void checkServer() {
 // PID
 
 // Define PID constants
-const double Kp = 0.6;        // Proportional gain
-const double Ki = 0.0000025;  // Integral gain
-const double Kd = 900;        // Derivative gain
+const double Kp = 0.35;      // Proportional gain
+const double Ki = 0.000005;  // Integral gain
+const double Kd = 400;       // Derivative gain
 
 // Define variables
+double error = 0;
 double previousError = 0;
 double integral = 0;
 double differential = 0;
+double controlSignal = 0;
 double currentTime = millis();
 double previousTime = millis();
 double elapsedTime = 0;
@@ -203,16 +205,16 @@ double PIDSpeed() {
   elapsedTime = double(currentTime - previousTime);
 
   // Calculate error
-  double error = nearestObstacleDistance - ObjectFollowingDistance;
+  error = double(nearestObstacleDistance - ObjectFollowingDistance);
 
   // Update integral
-  integral += error * elapsedTime;
+  integral += double(error * elapsedTime);
 
   // Update differential
-  differential = (error - previousError) / elapsedTime;
+  differential = double((error - previousError) / elapsedTime);
 
   // Calculate control signal
-  double controlSignal = Kp * error + Ki * integral + Kd * differential;
+  controlSignal = double(Kp * error + Ki * integral + Kd * differential);
 
   // Update previous error & time
   previousError = error;
@@ -555,13 +557,13 @@ void loop() {
   // Serial.print('.');
 
   // Serial.println("starting loop");  // Optional debugging statement
-  if (loopCounter % 31 == 0) {
-
-    checkServer();
-
-  } else if (loopCounter % 23 == 0) {
+  if (loopCounter % 23 == 0) {
 
     checkPositionRelativeToObject();
+
+  } else if (loopCounter % 31 == 0) {
+
+    checkServer();
 
   } else if (loopCounter % 500 == 0) {
 
@@ -570,8 +572,20 @@ void loop() {
 
     distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
 
+    /*
 
     message = "Distance travelled: " + String(int(distanceTravelledByTheCar))
+              + " Speed: " + String(int(carSpeed))
+              + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) : " No Object")
+              + " Current mode: " + ((currentMode) ? "Mode2 \n" : "Mode1 \n");
+
+    */
+
+    message = "Distance travelled: " + String(int((leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution))
+              + " error: " + String(Kp * error)
+              + " integral: " + String(Ki * integral)
+              + " differential: " + String(Kd * differential)
+              + " elapsedTime: " + String(elapsedTime)
               + " Speed: " + String(int(carSpeed))
               + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) : " No Object")
               + " Current mode: " + ((currentMode) ? "Mode2 \n" : "Mode1 \n");
@@ -580,15 +594,6 @@ void loop() {
     // Serial.println(message);
     ProcessingClient.write(message.c_str(), message.length());
 
-    /*
-
-    message = "Distance travelled: " + String(int((leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution))
-              + " Left travelled: " + String(int((leftPulseCount)*3.142 * radiusOfWheel / EncoderPulsesPerRevolution))
-              + " Right travelled: " + String(int((rightPulseCount)*3.142 * radiusOfWheel / EncoderPulsesPerRevolution))
-              + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) + "\n" : " No Object \n");
-
-
-    */
 
     // Reset the loop counter for the next iteration
 
