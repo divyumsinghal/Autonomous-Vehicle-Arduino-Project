@@ -1,5 +1,3 @@
-// Some necessary stuff
-
 // URLs for different car commands
 #define startURL 'Z'
 #define stopURL 'X'
@@ -44,8 +42,8 @@ const double RightWheelCoefficient = 1;         // Coefficient for adjusting Rig
 const double LeftWheelCoefficient = 0.92;       // Coefficient for adjusting left wheel speed
 const double MinSpeed = 0;                      // Minimum speed scale for the car
 const double MaxSpeed = 100;                    // Maximum speed scale for the car
-const int PWMMin = 0;                           // Minimum PWM value
-const int PWMMax = 225;                         // Maximum PWM value (capping it at 135 instead of 225)
+const int PWMMin = 50;                          // Minimum PWM value (capping it at 50 instead of 0)
+const int PWMMax = 135;                         // Maximum PWM value (capping it at 135 instead of 225)
 const int TurnSpeedOuter = 100;                 // Turning speed for outer wheel
 const int TurnSpeedInner = 30;                  // Turning speed for inner wheel
 const int EncoderPulsesPerRevolution = 4;       // Encoder generates 8 pulses per revolution -> 4 rising
@@ -553,6 +551,7 @@ void setup() {
 // Main execution loop function that runs continuously after setup
 
 void loop() {
+
   // Delegate the primary control logic
   // Serial.print('.');
 
@@ -567,7 +566,6 @@ void loop() {
 
   } else if (loopCounter % 500 == 0) {
 
-    // Execute obstacle tracking logic
     // Serial.print("Got into the 500th loop");
 
     distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
@@ -588,7 +586,7 @@ void loop() {
               + " elapsedTime: " + String(elapsedTime)
               + " Speed: " + String(int(carSpeed))
               + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) : " No Object")
-              + " Current mode: " + ((currentMode) ? "Mode2 \n" : "Mode1 \n");
+              + " Current mode: " + ((currentMode == MODE_1) ? "Mode1 \n" : "Mode2 \n");
 
 
     // Serial.println(message);
@@ -626,3 +624,4 @@ void loop() {
 
   // Serial.println("end of loop");
 }
+
