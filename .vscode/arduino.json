@@ -1,6 +1,4 @@
 {
     "port": "COM5",
-    "board": "arduino:renesas_uno:unor4wifi",
-    "programmer": "cmsis-dap",
-    "sketch": "Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+    "board": "arduino:renesas_uno:unor4wifi"
 }
