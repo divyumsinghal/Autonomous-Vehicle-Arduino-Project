@@ -1,4 +1,14 @@
 {
     "port": "COM5",
-    "board": "arduino:renesas_uno:unor4wifi"
+    "board": "arduino:renesas_uno:unor4wifi",
+    "sketch": "Arduino Code\\Silver-Challenge-Code\\Silver-Challenge-Code.ino",
+    "output": "build/",
+    "includePath": [
+        "${workspaceFolder}/**",
+        "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\cores\\arduino",
+        "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries",
+        "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries\\WiFiS3\\src", 
+        "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries\\Arduino_LED_Matrix\\src" ,
+        "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries\\Arduino_Uno_WiFi_Dev_Ed_Library\\src"
+    ]
 }

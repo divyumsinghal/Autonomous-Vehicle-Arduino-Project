@@ -1,15 +1,18 @@
-// Import the ControlP5 and processing.net libraries
-import controlP5.*;
+// Import the ControlP5, processing.net and meter libraries
 import processing.net.*;
+import controlP5.*;
+import meter.*;
+
 
 // Arduino's IP address (replace with actual IP address)
-String serverAddress = "192.168.0.110";
-
-// Declare ControlP5 object
-ControlP5 cp5;
+String serverAddress = "192.168.4.1";
 
 // Declare a Client object for network communication
 Client myClient;
+
+
+// Declare ControlP5 object
+ControlP5 cp5;
 
 // URLs for different car commands
 char startURL = 'Z';
@@ -22,19 +25,25 @@ char mode2URL = 'B';
 
 // booleans for switches
 boolean StopStart = false;
-boolean SwitchModes = false;
+
+boolean SwitchModes = true;
 
 // Message variables
-int Distance_travelled = 0;
-int Speed = 0;
-int Obstacle = 0;
-boolean Mode = false;
+String Distance_travelled = "0";
+String Speed = "100";
+String ObstacleDistance = "0";
+boolean Mode = true;
+
+// Slider
+Slider slide;
+
+// Meter
+Meter speedometer;
 
 
 // Setup function called once at the beginning
 void setup()
 {
-
   // Initialize client for communication with Arduino
   myClient = new Client(this, serverAddress, 5200);
 
@@ -66,7 +75,7 @@ void setup()
   cp5.addToggle("SwitchModes")
     .setPosition(buttonX, buttonY + buttonSpacing)
     .setSize(100, 20)
-    .setValue(false)
+    .setValue(true)
     .setSize(buttonWidth, buttonHeight)
     .setMode(ControlP5.SWITCH)
     .setColorActive(color(100, 100, 100))
@@ -95,7 +104,7 @@ void setup()
 
 
   // Create a slider with values from 1 to 10
-  Slider slide = cp5.addSlider("SpeedControl")
+  slide = cp5.addSlider("SpeedControl")
     .setRange(1, 10)
     .setValue(10)
     .setPosition(buttonX - 35, buttonY + 5 * buttonSpacing)
@@ -107,6 +116,11 @@ void setup()
 
   slide.getValueLabel().setFont(createFont("Arial", 50));
   slide.getCaptionLabel().setFont(createFont("Arial", 30)).align(ControlP5.CENTER, ControlP5.BOTTOM_OUTSIDE);
+
+  speedometer = new Meter(this, 450, 450, false);
+  speedometer.setMeterWidth(400);
+  speedometer.setUp(0, 50, 0, 50, 180, 360); // Set int minInputSignal, int maxInputSignal, float minScaleValue, float maxScaleValue, float arcMinDegrees and float arcMaxDegrees
+  speedometer.setTitle("Speed");
 }
 
 
@@ -188,10 +202,6 @@ void readClientArr()
 
     // Now you can interpret and print the data
 
-    Distance_travelled = data[0];
-    Speed = data[1];
-    Obstacle = data[2];
-
     println(
       "Distance travelled: " + data[0] +
       " Speed: " + data[1] +
@@ -204,30 +214,33 @@ void readClientArr()
   }
 }
 
+String[] values;
+String message = "0,0,0";
+
 void readClientCSV()
 {
   // Read a line of text from the client
-  String message = myClient.readStringUntil('\n');
+  message = myClient.readStringUntil('\n');
 
   if (message != null)
   {
     // Split the message into individual values
-    String[] values = split(message, ',');
+    values = split(message, ',');
 
     if (values.length == 3)
     {
       // Successfully split the message into three values
 
-      Distance_travelled = Integer.parseInt(values[0]);
-      Speed = Integer.parseInt(values[1]);
-      Obstacle = Integer.parseInt(values[2]);
+      Distance_travelled = values[0];
+      Speed = values[1];
+      ObstacleDistance = values[2];
 
       // Now you can interpret and print the values
       println
         (
-        "Control Signal: " + Distance_travelled +
-        " Speed: " + Speed +
-        " Obstacle: " + Obstacle +
+        "Control Signal: " + values[0] +
+        " Speed: " + values[1] +
+        " Obstacle: " + values[2] +
         " Mode: " + ((Mode) ? "mode 2" : "mode 1")
         );
     }
@@ -247,12 +260,17 @@ void draw()
    text("Mode: " + (Mode ? "2" : "1"), 500, 300);
    */
 
+  String valueLabel = String.valueOf((int)(slide.getValue() * 5));
+  slide.getValueLabel().setText(valueLabel);
+
   // Read data from the Arduino
   readClientCSV();
 
   textSize(32);
   text("Distance travelled: " + Distance_travelled, 500, 100);
-  text("Obstacle distance:" + Obstacle, 500, 200);
+  text("Obstacle distance:" + ObstacleDistance, 500, 200);
   text("Speed: " + Speed, 500, 300);
   text("Mode: " + (Mode ? "2" : "1"), 500, 400);
+
+  speedometer.updateMeter(int(Speed));
 };

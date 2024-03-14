@@ -69,7 +69,7 @@ float distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * r
 
 // Wifi Details
 char ssid[] = "wifi";
-char pass[] = "pass";
+char pass[] = "password";
 
 // Declare an instance of the WiFiServer class named 'server'
 WiFiServer server(5200);
@@ -112,7 +112,7 @@ void checkServer() {
 
   switch (data) {
     case startURL:
-      // Serial.println(data);
+      Serial.println(data);
       StopTheCar = false;
       moveForwardatSpeed(carSpeed);
       // Serial.println(data);
@@ -218,7 +218,7 @@ int mapSpeedToPWM(float speed) {
 // Function to move the car forward at a specified speed
 void moveForwardatSpeed(float speed) {
   // Serial.print("Moving forward at ");
-  // Serial.println(speed);
+   Serial.println(speed);
 
   // Adjust right motor PWM based on the specified speed
   analogWrite(RightMotorPWM, mapSpeedToPWM(RightWheelCoefficient * speed));
