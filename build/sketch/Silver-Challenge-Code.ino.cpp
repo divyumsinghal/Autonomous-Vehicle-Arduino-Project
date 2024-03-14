@@ -259,8 +259,8 @@ double PIDSpeedMaintainSpeed()
 // Wifi
 
 // Wifi Details
-char ssid[] = "SKYC9DAB";
-char pass[] = "WWSMWVYRVC";
+char ssid[] = "wifi";
+char pass[] = "pass";
 
 // Declare an instance of the WiFiServer class named 'server'
 WiFiServer server(5200);

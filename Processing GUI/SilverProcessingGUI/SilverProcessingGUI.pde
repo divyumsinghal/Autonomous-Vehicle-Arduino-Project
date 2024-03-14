@@ -5,7 +5,7 @@ import meter.*;
 
 
 // Arduino's IP address (replace with actual IP address)
-String serverAddress = "192.168.0.110";
+String serverAddress = "192.168.4.1";
 
 // Declare a Client object for network communication
 Client myClient;
@@ -25,15 +25,19 @@ char mode2URL = 'B';
 
 // booleans for switches
 boolean StopStart = false;
-boolean SwitchModes = false;
+
+boolean SwitchModes = true;
 
 // Message variables
 String Distance_travelled = "0";
 String Speed = "100";
-String Obstacle = "0";
-boolean Mode = false;
+String ObstacleDistance = "0";
+boolean Mode = true;
 
+// Slider
+Slider slide;
 
+// Meter
 Meter speedometer;
 
 
@@ -71,7 +75,7 @@ void setup()
   cp5.addToggle("SwitchModes")
     .setPosition(buttonX, buttonY + buttonSpacing)
     .setSize(100, 20)
-    .setValue(false)
+    .setValue(true)
     .setSize(buttonWidth, buttonHeight)
     .setMode(ControlP5.SWITCH)
     .setColorActive(color(100, 100, 100))
@@ -100,7 +104,7 @@ void setup()
 
 
   // Create a slider with values from 1 to 10
-  Slider slide = cp5.addSlider("SpeedControl")
+  slide = cp5.addSlider("SpeedControl")
     .setRange(1, 10)
     .setValue(10)
     .setPosition(buttonX - 35, buttonY + 5 * buttonSpacing)
@@ -115,7 +119,7 @@ void setup()
 
   speedometer = new Meter(this, 450, 450, false);
   speedometer.setMeterWidth(400);
-  speedometer.setUp(0, 100, 0, 100, 180, 360); // Set int minInputSignal, int maxInputSignal, float minScaleValue, float maxScaleValue, float arcMinDegrees and float arcMaxDegrees
+  speedometer.setUp(0, 50, 0, 50, 180, 360); // Set int minInputSignal, int maxInputSignal, float minScaleValue, float maxScaleValue, float arcMinDegrees and float arcMaxDegrees
   speedometer.setTitle("Speed");
 }
 
@@ -229,7 +233,7 @@ void readClientCSV()
 
       Distance_travelled = values[0];
       Speed = values[1];
-      Obstacle = values[2];
+      ObstacleDistance = values[2];
 
       // Now you can interpret and print the values
       println
@@ -256,15 +260,17 @@ void draw()
    text("Mode: " + (Mode ? "2" : "1"), 500, 300);
    */
 
+  String valueLabel = String.valueOf((int)(slide.getValue() * 5));
+  slide.getValueLabel().setText(valueLabel);
+
   // Read data from the Arduino
   readClientCSV();
 
   textSize(32);
   text("Distance travelled: " + Distance_travelled, 500, 100);
-  text("Obstacle distance:" + Obstacle, 500, 200);
+  text("Obstacle distance:" + ObstacleDistance, 500, 200);
   text("Speed: " + Speed, 500, 300);
   text("Mode: " + (Mode ? "2" : "1"), 500, 400);
-  
+
   speedometer.updateMeter(int(Speed));
-  
 };
