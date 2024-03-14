@@ -1,15 +1,18 @@
-// Import the ControlP5 and processing.net libraries
-import controlP5.*;
+// Import the ControlP5, processing.net and meter libraries
 import processing.net.*;
+import controlP5.*;
+import meter.*;
+
 
 // Arduino's IP address (replace with actual IP address)
 String serverAddress = "192.168.0.110";
 
-// Declare ControlP5 object
-ControlP5 cp5;
-
 // Declare a Client object for network communication
 Client myClient;
+
+
+// Declare ControlP5 object
+ControlP5 cp5;
 
 // URLs for different car commands
 char startURL = 'Z';
@@ -25,16 +28,18 @@ boolean StopStart = false;
 boolean SwitchModes = false;
 
 // Message variables
-int Distance_travelled = 0;
-int Speed = 0;
-int Obstacle = 0;
+String Distance_travelled = "0";
+String Speed = "100";
+String Obstacle = "0";
 boolean Mode = false;
+
+
+Meter speedometer;
 
 
 // Setup function called once at the beginning
 void setup()
 {
-
   // Initialize client for communication with Arduino
   myClient = new Client(this, serverAddress, 5200);
 
@@ -107,6 +112,11 @@ void setup()
 
   slide.getValueLabel().setFont(createFont("Arial", 50));
   slide.getCaptionLabel().setFont(createFont("Arial", 30)).align(ControlP5.CENTER, ControlP5.BOTTOM_OUTSIDE);
+
+  speedometer = new Meter(this, 450, 450, false);
+  speedometer.setMeterWidth(400);
+  speedometer.setUp(0, 100, 0, 100, 180, 360); // Set int minInputSignal, int maxInputSignal, float minScaleValue, float maxScaleValue, float arcMinDegrees and float arcMaxDegrees
+  speedometer.setTitle("Speed");
 }
 
 
@@ -188,10 +198,6 @@ void readClientArr()
 
     // Now you can interpret and print the data
 
-    Distance_travelled = data[0];
-    Speed = data[1];
-    Obstacle = data[2];
-
     println(
       "Distance travelled: " + data[0] +
       " Speed: " + data[1] +
@@ -204,30 +210,33 @@ void readClientArr()
   }
 }
 
+String[] values;
+String message = "0,0,0";
+
 void readClientCSV()
 {
   // Read a line of text from the client
-  String message = myClient.readStringUntil('\n');
+  message = myClient.readStringUntil('\n');
 
   if (message != null)
   {
     // Split the message into individual values
-    String[] values = split(message, ',');
+    values = split(message, ',');
 
     if (values.length == 3)
     {
       // Successfully split the message into three values
 
-      Distance_travelled = Integer.parseInt(values[0]);
-      Speed = Integer.parseInt(values[1]);
-      Obstacle = Integer.parseInt(values[2]);
+      Distance_travelled = values[0];
+      Speed = values[1];
+      Obstacle = values[2];
 
       // Now you can interpret and print the values
       println
         (
-        "Control Signal: " + Distance_travelled +
-        " Speed: " + Speed +
-        " Obstacle: " + Obstacle +
+        "Control Signal: " + values[0] +
+        " Speed: " + values[1] +
+        " Obstacle: " + values[2] +
         " Mode: " + ((Mode) ? "mode 2" : "mode 1")
         );
     }
@@ -255,4 +264,7 @@ void draw()
   text("Obstacle distance:" + Obstacle, 500, 200);
   text("Speed: " + Speed, 500, 300);
   text("Mode: " + (Mode ? "2" : "1"), 500, 400);
+  
+  speedometer.updateMeter(int(Speed));
+  
 };
