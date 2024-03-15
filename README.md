@@ -1,10 +1,10 @@
 # Autonomous-Vehicle-Project (In Progress)
 
-A small Autonomous Vehicle controlled using an Arduino Board, using a wireless connection and an interactive GUI built using processing.
+Welcome to the world of autonomous vehicles, where innovation meets intelligence! The Autonomous Vehicle Project represents a pioneering endeavor in the realm of robotics, integrating cutting-edge technology with a dash of creativity to craft a marvel of modern engineering. Let's embark on a journey through the intricate design and ingenious functionalities of this project.
 
 ## Overview
 
-Welcome to the Autonomous Vehicle Project! This project implements an Arduino-based autonomous vehicle capable of navigating its environment, avoiding obstacles, following lines, and displaying patterns on an LED matrix. It leverages various sensors, actuators, and the Huskylens vision sensor for intelligent object detection. The vehicle can be remotely controlled through a graphical user interface (GUI) built using the Processing programming language.
+Behold the Autonomous Vehicle Project, a symphony of Arduino brilliance orchestrated to create a vehicle that not only moves but navigates its surroundings with finesse. This project is a testament to human ingenuity, employing an array of sensors, actuators, and intelligent algorithms to enable autonomous operation. From evading obstacles to tracing lines and even captivating audiences with LED matrix displays, this vehicle is a multifaceted marvel designed to captivate and inspire.
 
 ## Table of Contents
 
@@ -22,29 +22,31 @@ Welcome to the Autonomous Vehicle Project! This project implements an Arduino-ba
    - [Huskylens Vision Sensor](#huskylens-vision-sensor)
    - [Connection Setup and Server Communication](#connection-setup-and-server-communication)
    - [Speed Tracking using Encoders](#speed-tracking-using-encoders)
+   - [PID Controllers and Self-Organizing Algorithm](#pid-controllers-and-self-organizing-algorithm)
 
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
 
 ## Project Structure
 
-The project is organized into two main components:
+At the heart of this project lies a meticulously organized structure, comprising two core components:
 
-1. __Arduino Code (`autonomous_vehicle_project.ino`):__
+1. **Arduino Code (`autonomous_vehicle_project.ino`):**
+   - This is where the magic unfolds, with the Arduino sketch serving as the brain of the autonomous vehicle.
+   - From intricate algorithms for obstacle avoidance and motor control to seamless integration with sensors and actuators, every line of code in this sketch is a testament to innovation.
+   - Notably, it hosts the sophisticated PID controllers and a self-organizing algorithm that imbue the vehicle with intelligence and adaptability.
 
-   - The main Arduino sketch that controls the vehicle's behavior.
-   - Implements the algorithm with various functions for obstacle avoidance, motor control, speed tracking, and communication with the Huskylens sensor.
-   - Integrates LED matrix display functions and checks for client connections.
-
-2. __Processing Code (`processing_gui.pde`):__
-
-   - A Processing sketch that serves as a graphical user interface (GUI) for remotely controlling the autonomous vehicle.
-   - Utilizes the ControlP5 library for GUI elements, including buttons and sliders.
+2. **Processing Code (`processing_gui.pde`):**
+   - Complementing the Arduino sketch is the Processing code, a graphical user interface (GUI) that empowers users to interact with the vehicle effortlessly and control it remotely.
+   - Through intuitive controls and real-time feedback, this GUI elevates the user experience, making remote control a breeze.
+   - Utilizes the ControlP5 library for GUI elements, including buttons and sliders and meter library for the spedometer.
    - Sends commands to the Arduino through a network connection.
 
 ## Hardware Requirements
 
-1. Arduino Board (e.g., Arduino Uno)
+Fueling the brilliance of this project are the following hardware components:
+
+1. Arduino Board
 2. Infrared Sensors
 3. Ultrasonic Sensor
 4. Motors and Motor Driver
@@ -56,109 +58,108 @@ The project is organized into two main components:
 
 ## Software Requirements
 
-1. Arduino IDE
-2. Processing IDE
+To bring this project to life, you'll need:
+
+1. Arduino IDE or equivalent setup on vs code/ other IDE
+2. Processing IDE or equivalent setup on vs code/ other IDE
 3. Necessary Libraries
 
 ## Installation
 
-1. Clone the repository:
+Embark on your journey with these simple steps:
 
-```bash {"id":"01HQAZKC8W1K65H8E20W87QJW6"}
+1. **Clone the Repository:**
+   - Begin by cloning the repository to your local machine using the provided command.
+
+```bash
 git clone https://github.com/divyumsinghal/Autonomous-Vehicle-Project.git
-
 ```
 
 2. **Arduino Code:**
-
    - Open the Arduino sketch (`autonomous_vehicle_project.ino`) in the Arduino IDE.
-   - Install the required libraries, e.g.:
+   - Install the required libraries,  e.g.:
       - `HUSKYLENS` for communicating with the Huskylens sensor.
       - `Arduino_LED_Matrix` for handling the LED matrix; etc.
-
-   - Connect the Arduino board to your computer and upload the sketch.
+   - Connect your Arduino board and upload the sketch.
 
 3. **Processing Code:**
-
    - Open the Processing sketch (`ProcessingGui.pde`) in the Processing IDE.
-   - Run the Processing sketch to launch the GUI.
+   - Run the sketch to launch the GUI and immerse yourself in the world of autonomous control.
 
 ## Usage
 
-1. Connect the hardware components as per the pin configurations in the Arduino sketch.
-2. Power on the autonomous vehicle.
-3. Launch the Processing GUI.
-4. Enter the WiFi credentials in the Arduino sketch.
-5. Control the vehicle using the GUI buttons and sliders.
+Experience the thrill of autonomy with these simple steps:
+
+1. **Hardware Setup:**
+   - Connect the hardware components according to the pin configurations specified in the Arduino sketch.
+   - Power on the autonomous vehicle and prepare for adventure.
+
+2. **Software Interaction:**
+   - Launch the Processing GUI and witness the interface come to life.
+   - Enter your WiFi credentials in the Arduino sketch for seamless connectivity.
+   - Take control of the vehicle using the intuitive buttons and sliders provided in the GUI.
 
 ## Configuration
+
+Tailor the project to your preferences with these configuration options:
 
 ### Arduino Configuration
 
 1. **WiFi Credentials:**
+   - Personalize the Arduino sketch by replacing placeholders with your WiFi credentials. Or if you have a board which can build its own WAP, then use that.
 
-   - Replace the placeholders in the Arduino sketch (`.ino`) with your WiFi credentials:
-
-2. **Other Configurations:**
-
-   - Adjust other configuration parameters in the sketch, such as pin assignments, speed limits, and obstacle detection thresholds, according to your hardware setup.
+2. **Customization:**
+   - Fine-tune various configuration parameters such as pin assignments, PID constants, speed limits, and obstacle detection thresholds to suit your specific requirements.
 
 ### Processing Configuration
 
 1. **Arduino IP Address:**
-
-- Replace the placeholder in the Processing sketch (`processing_gui.pde`) with the actual IP address of your Arduino:
-
-```java {"id":"01HQAZKC8W1K65H8E20ZR3QTR7"}
-String serverAddress = "replace-with-arduino-ip-address";
-```
-
-- You should get it printed in your Serial when the code is run.
+   - Ensure seamless communication by replacing placeholders with the actual IP address of your Arduino in the Processing sketch.
 
 2. **GUI Customization:**
-
-   - Customize the GUI layout, button positions, and labels based on your preferences.
+   - Let your creativity shine as you customize the GUI layout, button positions, and labels to enhance user interaction.
 
 ## Features
 
 ### Obstacle Avoidance
 
-The vehicle is equipped with an ultrasonic sensor for obstacle detection, avoidance amd safe following. The algorithm implements intelligent obstacle avoidance logic, adjusting the vehicle's speed based on the proximity of obstacles. If an obstacle is too close, the vehicle stops to prevent collisions.
+Navigate with confidence thanks to intelligent obstacle avoidance logic that adjusts vehicle speed based on proximity to obstacles, preventing collisions and ensuring safe traversal of the environment.
 
 ### Line Following
 
-Utilizing the two IR sensors, the vehicle can follow lines marked on the ground. The `keepMovingCheckingIRSensors()` function in the algorithm processes the data and adjusts the vehicle's motion to stay on the line.
+Follow the path laid out before you with precision, utilizing infrared sensors to detect and track lines on the ground, ensuring smooth and accurate navigation.
 
 ### Remote Control
 
-The Processing GUI provides a user-friendly interface for remotely controlling the autonomous vehicle. It includes buttons for forward and backward motion, turning left and right, starting and stopping the vehicle, adjusting speed, and displaying predefined patterns on
+Empower users with seamless remote control capabilities through a user-friendly GUI, offering intuitive controls for forward and backward motion, turning, speed adjustment, and more.
 
 ### LED Matrix Display
 
-The project incorporates an LED matrix that serves both functional and expressive purposes. The LED matrix is used to display various predefined patterns, such as a smiley face, heart, and a custom "W5" pattern. These patterns are loaded onto the matrix using functions like `displaySmiley()`, `displayHeart()`, and `displayW5()`. The LED matrix enhances the visual appeal of the autonomous vehicle and can be customized with additional patterns as needed.
+Illuminate your surroundings with a dazzling LED matrix display, showcasing an array of predefined patterns ranging from smiley faces to custom designs, adding a touch of flair to your autonomous vehicle.
 
 ### Huskylens Vision Sensor
 
-The project integrates the Huskylens vision sensor, which provides advanced object detection and tracking capabilities. Using the `HUSKYLENS` library, the Arduino communicates with the Huskylens sensor via I2C. The vision sensor can recognize and track objects, including blocks and arrows, offering detailed information such as position coordinates and unique IDs. This functionality enables the autonomous vehicle to interact intelligently with its environment, responding to detected objects in real-time.
+Unlock the power of advanced object detection and tracking with the Huskylens vision sensor, enabling real-time recognition and tracking of objects in the vehicle's environment.
 
 ### Connection Setup and Server Communication
 
-The autonomous vehicle is equipped with WiFi capabilities using the NINA module. The `connectionSetup()` function establishes a connection to a WiFi network, obtaining an IP address for the Arduino on the network. Additionally, the vehicle can communicate with clients over the WiFi network using the `checkServer()` function, which checks for incoming client connections and sends a "Hello Client" message to the connected client.
+Stay connected with the world around you through WiFi capabilities, establishing communication with clients over the network and ensuring seamless interaction with external devices.
 
 ### Speed Tracking using Encoders
 
-The system employs motor encoders to track the speed of each wheel. The `speedTrackingUsingEncoders()` function calculates the speeds of the left and right motors based on pulse counts from the encoders. This information is crucial for maintaining a consistent and controlled motion of the vehicle.
+Maintain precise control over vehicle speed with motor encoders that track wheel movement, providing crucial feedback for optimizing motion and ensuring smooth navigation.
 
-These features collectively contribute to the overall functionality and versatility of the autonomous vehicle, making it capable of intelligent navigation, object detection, and interactive communication. The modular design allows for easy customization and expansion of features to suit specific project requirements.
+### PID Controllers and Self-Organizing Algorithm
+
+Marvel at the sophistication of PID controllers that fine-tune motor performance with precision, ensuring optimal operation in varying conditions. Delve into the realm of self-organizing algorithms that adapt and optimize vehicle behavior based on real-time feedback, pushing the boundaries of autonomous navigation.
 
 ## Troubleshooting
 
-If you encounter issues:
-
-- Double-check hardware connections.
-- Ensure correct library installations.
-- Adjust configuration parameters in the Arduino sketch.
+Encountered a bump in the road? Fear not! Troubleshooting tips are here to guide you through any challenges you may face, from hardware connections to library installations and configuration adjustments.
 
 ## License
 
 This project is licensed under the [GNU General Public License v3.0](LICENSE).
+
+
+Dive into the world of autonomous vehicles and let your imagination soar as you explore the endless possibilities of robotics and automation. The journey awaits!
