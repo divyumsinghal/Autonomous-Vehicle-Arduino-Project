@@ -5,7 +5,7 @@ import meter.*;
 
 
 // Arduino's IP address (replace with actual IP address)
-String serverAddress = "192.168.4.1";
+String serverAddress = "192.168.0.25";
 
 // Declare a Client object for network communication
 Client myClient;

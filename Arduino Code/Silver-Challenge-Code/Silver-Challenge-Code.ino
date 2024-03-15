@@ -1,16 +1,25 @@
 // URLs for different car commands
 #define startURL 'Z'
 #define stopURL 'X'
+
 #define displayHeartURL 'H'
 #define displaySmileyURL 'S'
 #define displayW5URL 'W'
+
 #define mode1URL 'A'
 #define mode2URL 'B'
 
-// Include the library for handling an LED matrix
+// Target Speed is send as an integer in ASCII
+
+
+
+// Include the library for handling the LED matrix
 #include "Arduino_LED_Matrix.h"
-// Include the library for WiFi communication using the NINA module
+
+// Include the library for WiFi communication using the S3 module
 #include <WiFiS3.h>
+
+
 
 // Variables
 
@@ -20,7 +29,7 @@ const int RightIRSensorInput = A0;               // Analog pin for the right inf
 const int RightMotorPWM = 10;                    // PWM pin for controlling the right motor speed
 const int LeftMotorPWM = 9;                      // PWM pin for controlling the left motor speed
 const int RightMotorSwitch1 = 11;                // Motor control pin 1 for the right motor
-const int RightMotorSwitch2 = 12;                // Motor control pin 2 for the right motor (changed to 9, used to be 13)
+const int RightMotorSwitch2 = 12;                // Motor control pin 2 for the right motor (changed to 12, used to be 13)
 const int LeftMotorSwitch3 = 8;                  // Motor control pin 3 for the left motor
 const int LeftMotorSwitch4 = 7;                  // Motor control pin 4 for the left motor
 const int UltrasonicTrigger = 5;                 // Digital pin for triggering the ultrasonic sensor
@@ -29,11 +38,14 @@ const int LED_PIN = 13;                          // Digital pin for the LED
 int RightMotorSwitchActive = RightMotorSwitch1;  // Active Switch for right motor
 int LeftMotorSwitchActive = LeftMotorSwitch3;    // Active Switch for Left motor
 
-// Defining encoders:
-const int RightEncoder = 3;                       // Digital pin for the right motor encoder
-const int LeftEncoder = 2;                        // Digital pin for the left motor encoder
-volatile unsigned long long leftPulseCount = 0;   // Pulse count for the left motor encoder
-volatile unsigned long long rightPulseCount = 0;  // Pulse count for the right motor encoder
+
+// Defining encoders
+const int RightEncoder = 3;                  // Digital pin for the right motor encoder
+const int LeftEncoder = 2;                   // Digital pin for the left motor encoder
+volatile unsigned long leftPulseCount = 0;   // Pulse count for the left motor encoder
+volatile unsigned long rightPulseCount = 0;  // Pulse count for the right motor encoder
+
+
 
 // Constants
 const double RightWheelCoefficient = 1;         // Coefficient for adjusting Right wheel speed
@@ -44,7 +56,7 @@ const int PWMMin = 0;                           // Minimum PWM value
 const int PWMMax = 140;                         // Maximum PWM value (capping it at 140 instead of 225)
 const int TurnSpeedOuterPulseWidth = 130;       // Turning speed for outer wheel
 const int TurnSpeedInnerPulseWidth = 50;        // Turning speed for inner wheel
-const int EncoderPulsesPerRevolution = 4;       // Encoder generates 8 pulses per revolution -> 4 rising
+const int EncoderPulsesPerRevolution = 4;       // Encoder generates 8 pulses per revolution -> 4 rising are tracked
 const int CriticalObjectDistance = 10;          // Critical distance for detecting obstacles
 const int ObjectFollowingDistance = 20;         // A slightly larger and safer distance
 const int Overtime = 51;                        // Return this when sonar takes too long
@@ -53,56 +65,84 @@ const double radiusOfWheelCm = 3.5;             // radius of wheel in cm
 const double radiusOfWheelMm = 35;              // radius of wheel in mm
 
 
+
 // more variables
 double nearestObstacleDistance = 100;                                                                                            // Distance to the nearest obstacle from ultrasonic sensor
 bool obstacleTooClose = false;                                                                                                   // Flag indicating if an obstacle is too close
 double carSpeedAlmostMmS = MaxSpeedMmS;                                                                                          // Current speed of the car
 unsigned long loopCounter = 0;                                                                                                   // Counter for obstacle tracking frequency
-bool StopTheCar = true;                                                                                                         // Control if you want the car to move
+bool StopTheCar = true;                                                                                                          // Control if you want the car to move
 double distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelMm / EncoderPulsesPerRevolution;  // How far have the wheels spun (in cm)
 double targetSpeedMmS = MaxSpeedMmS;                                                                                             // Speed to reach in mode 2
 
+
+
+
 // MODES
+
 
 // Define an enumeration for modes
 enum Modes {
+
   MODE_1_Object_Following,  // Object Following -> PID
   MODE_2_Speed_Control      // Speed Control -> Slider on GUI
+
 };
+
 
 // Variable to store the current mode
 Modes currentMode = MODE_2_Speed_Control;
 
+
 // Speed of Buggy
 
-double arcLengthMm = double(1000 * radiusOfWheelMm * 45 / 360);
+// Define arc length in millimeters based on wheel radius and angular displacement
+double arcLengthMm = (double)(1000 * radiusOfWheelMm * 45 / 360);
 
-volatile unsigned long long leftTimePrev = millis();
-volatile unsigned long long leftTimeCurrent = infinity();
+// Variables to store previous and current time for left wheel and right wheel interrupts
+volatile unsigned long leftTimePrev = millis();
+volatile unsigned long leftTimeCurrent = infinity();
 
-volatile unsigned long long rightTimePrev = millis();
-volatile unsigned long long rightTimeCurrent = infinity();
+volatile unsigned long rightTimePrev = millis();
+volatile unsigned long rightTimeCurrent = infinity();
 
-double leftSpeedMmS = double(arcLengthMm / (leftTimeCurrent - leftTimePrev));  // cm/s
-double rightSpeedMmS = double(arcLengthMm / (rightTimeCurrent - rightTimePrev));
-double averageSpeedMmS = double((leftSpeedMmS + rightSpeedMmS) / 2);
+// Variables to store past time values for left and right wheels
+volatile unsigned long leftTimeCurrentPast = leftTimeCurrent;
+volatile unsigned long rightTimeCurrentPast = rightTimeCurrent;
+
+// Calculate left and right wheel speeds in millimeters per second (mm/s)
+double leftSpeedMmS = (double)(arcLengthMm / (leftTimeCurrent - leftTimePrev));  // mm/s
+double rightSpeedMmS = (double)(arcLengthMm / (rightTimeCurrent - rightTimePrev));
+
+// Calculate average speed of both wheels in millimeters per second (mm/s)
+double averageSpeedMmS = (double)((leftSpeedMmS + rightSpeedMmS) / 2);
+
+
+
+
+// PID
+
 
 // PID for Object Following
 
 // Define PID constants
-const double Kp_f_1 = 0.15;       // Proportional gain
-long const double Ki_f_1 = 5e-6;  // Integral gain
-const double Kd_f_1 = 50;         // Derivative gain
+const double Kp_f_1 = 0.065;         // Proportional gain
+long const double Ki_f_1 = 5e-14;    // Integral gain
+const double Kd_f_1 = 0.0000000005;  // Derivative gain
 
 // Define variables
-double error_f_1 = 0;
-double previousError_f_1 = 0;
-double integral_f_1 = 0;
-double differential_f_1 = 0;
-double controlSignal_f_1 = 0;
-double currentTime_f_1 = infinity();
-double previousTime_f_1 = millis();
-double elapsedTime_f_1 = 0;
+double error_f_1 = 0;          // Current error
+double previousError_f_1 = 0;  // Error in the previous iteration
+
+double integral_f_1 = 0;      // Integral of the error over time
+double differential_f_1 = 0;  // Derivative of the error
+
+double controlSignal_f_1 = 0;  // Control signal output
+
+double currentTime_f_1 = infinity();  // Current time
+double previousTime_f_1 = millis();   // Time in the previous iteration
+double elapsedTime_f_1 = 0;           // Elapsed time since the previous iteration
+
 
 // Define function
 double PIDObjectFollowing_f_1() {
@@ -114,10 +154,8 @@ double PIDObjectFollowing_f_1() {
   // Calculate error
   error_f_1 = (double)(nearestObstacleDistance - ObjectFollowingDistance);
 
-  // Serial.println("Error_f_1 = " + String(error_f_1));
-
   // Update integral
-  integral_f_1 += (error_f_1 < 15) ? (double)(error_f_1 * elapsedTime_f_1) : 0;
+  integral_f_1 += (error_f_1 < 10) ? (double)(error_f_1 * elapsedTime_f_1) : 0;
 
   // Update differential
   differential_f_1 = (double)((error_f_1 - previousError_f_1) / elapsedTime_f_1);
@@ -135,35 +173,47 @@ double PIDObjectFollowing_f_1() {
   // Ensure the next speed is within bounds
   nextSpeed_f_1 = constrain(nextSpeed_f_1, MinSpeedMmS, MaxSpeedMmS);
 
-  // Serial.println("F1 PID: " + String(nextSpeed_f_1));
 
+  // Serial.println("elapsedTime_f_1 = " + String(elapsedTime_f_1));
+  // Serial.println("targetSpeedMmS = " + String(targetSpeedMmS));
+  // Serial.println("averageSpeedMmS = " + String(averageSpeedMmS));
+  // Serial.println("carSpeedAlmostMmS = " + String(carSpeedAlmostMmS));
+  // Serial.println("error_f_1: " + String(error_f_1));
+  // Serial.println("differential_f_1: " + String(differential_f_1 * Kd_f_1));
   // Serial.println("controlSignal_f_1: " + String(controlSignal_f_1));
+  // Serial.println("nextSpeed_f_1: " + String(nextSpeed_f_1) + "\n");
+
 
   return nextSpeed_f_1;
 }
 
-// PID for Maintain Speed
+
+// PID for Maintain Speed -> Speed Control
 
 // Define PID constants
-const double Kp_m_2 = 0.1;         // Proportional gain
-const long double Ki_m_2 = 5e-11;  // Integral gain
-const double Kd_m_2 = 4e-4;        // Derivative gain
+
+const double Kp_m_2 = 0.01;        // Proportional gain
+const long double Ki_m_2 = 5e-12;  // Integral gain
+const double Kd_m_2 = 2e-12;       // Derivative gain
 
 // Define variables
-double error_m_2 = 0;
-double previousError_m_2 = 0;
-double integral_m_2 = 0;
-double differential_m_2 = 0;
-double controlSignal_m_2 = 0;
-unsigned long long currentTime_m_2 = infinity();
-unsigned long long previousTime_m_2 = millis();
-double elapsedTime_m_2 = 0;
+double error_m_2 = 0;          // Current error
+double previousError_m_2 = 0;  // Error in the previous iteration
 
+double integral_m_2 = 0;      // Integral of the error over time
+double differential_m_2 = 0;  // Derivative of the error
+
+double controlSignal_m_2 = 0;  // Control signal output
+
+unsigned long currentTime_m_2 = infinity();  // Current time
+unsigned long previousTime_m_2 = millis();   // Time in the previous iteration
+double elapsedTime_m_2 = 0;                  // Elapsed time since the previous iteration
+
+
+// Function to calculate PID for maintaining speed
 double PIDMaintainSpeed_m_2() {
 
-  leftSpeedMmS = (double)(arcLengthMm / (leftTimeCurrent - leftTimePrev));  // mm/s
-  rightSpeedMmS = (double)(arcLengthMm / (rightTimeCurrent - rightTimePrev));
-  averageSpeedMmS = (double)((leftSpeedMmS + rightSpeedMmS) / 2);
+  calculateSpeed();
 
   // Time
   currentTime_m_2 = millis();
@@ -175,10 +225,10 @@ double PIDMaintainSpeed_m_2() {
   // Serial.println("Error_m_2 = " + String(error_m_2));
 
   // Update integral
-  integral_m_2 += (abs(error_f_1) < 20) ? (double)(error_m_2 * elapsedTime_m_2);
+  integral_m_2 += (abs(error_f_1) < 20) ? (double)(error_m_2 * elapsedTime_m_2) : 0;
 
   // Update differential
-  differential_m_2 = double((error_m_2 - previousError_m_2) / elapsedTime_m_2);
+  differential_m_2 = (double)((error_m_2 - previousError_m_2) / elapsedTime_m_2);
 
   // Calculate control signal
   controlSignal_m_2 = (double)(Kp_m_2 * error_m_2 + Ki_m_2 * integral_m_2 + Kd_m_2 * differential_m_2);
@@ -193,17 +243,28 @@ double PIDMaintainSpeed_m_2() {
   // Ensure the next speed is within bounds
   nextSpeed_m_2 = constrain(nextSpeed_m_2, MinSpeedMmS, MaxSpeedMmS);
 
+
+  // Serial.println("elapsedTime_m_2 = " + String(elapsedTime_m_2));
+  // Serial.println("targetSpeedMmS = " + String(targetSpeedMmS));
+  // Serial.println("averageSpeedMmS = " + String(averageSpeedMmS));
+  // Serial.println("carSpeedAlmostMmS = " + String(carSpeedAlmostMmS));
+  // Serial.println("error_m_2: " + String(error_m_2));
+  // Serial.println("differential_m_2: " + String(differential_m_2 * Kd_m_2));
   // Serial.println("controlSignal_m_2: " + String(controlSignal_m_2));
+  // Serial.println("nextSpeed_m_2: " + String(nextSpeed_m_2) + "\n");
+
 
   return nextSpeed_m_2;
 }
 
 
+
 // Wifi
 
+
 // Wifi Details
-char ssid[] = "W5istheBest";
-char pass[] = "TinLizzy";
+char ssid[] = "b";
+char pass[] = "h";
 
 // Declare an instance of the WiFiServer class named 'server'
 WiFiServer server(5200);
@@ -219,6 +280,7 @@ String messageCSV;
 // Data
 char data;
 
+
 // WiFi Setup
 
 // Connection Setup
@@ -229,7 +291,7 @@ void connectionSetup() {
   // Initiate a connection to the WiFi network using the provided SSID and password
   WiFi.begin(ssid, pass);
 
-  delay(5000);
+  delay(1000);
 
   // Obtain the local IP address assigned to the Arduino on the WiFi network
   IPAddress ip = WiFi.localIP();
@@ -260,75 +322,109 @@ void checkServer() {
     case startURL:
 
       // Serial.println(data);
+
       StopTheCar = false;
+
       // Serial.println(data);
+
       break;
 
     case stopURL:
 
       // Serial.println(data);
+
       StopTheCar = true;
+
       stopCar();
+
       break;
 
     case mode1URL:
 
       currentMode = MODE_1_Object_Following;
+
       integral_f_1 = 0;
+
       // ProcessingClient.write("NOW Mode 1! \n");
+
       break;
 
     case mode2URL:
 
       // ProcessingClient.write("NOW Mode 2! \n");
+
       currentMode = MODE_2_Speed_Control;
+
       integral_m_2 = 0;
+
       break;
 
     case displayHeartURL:
 
       // Serial.println(data);
+
       displayHeart();
+
       break;
 
     case displaySmileyURL:
 
       // Serial.println(data);
+
       displaySmiley();
+
       break;
 
     case displayW5URL:
 
       // Serial.println(data);
+
       displayW5();
+
       break;
 
     default:
       // Handle speed Command
+
       // Serial.print(data);
 
+      // Check if the current mode is MODE_2_Speed_Control
       if (currentMode == MODE_2_Speed_Control) {
 
-        int setSpeed = (data - '0' + 1) * 3;
+        // Calculate the desired speed based on the received data
+        // data - '0' converts from ASCII to integer, then add 1 and multiply by 3
+        int setSpeed = (data - '0' + 1) * 5;
 
+        // Check if the calculated speed is within acceptable range
         if (setSpeed > MinSpeedMmS && setSpeed <= MaxSpeedMmS) {
+
+          // Update the target speed and the almost car speed with the new value
 
           targetSpeedMmS = setSpeed;
           carSpeedAlmostMmS = targetSpeedMmS;
 
+          // Print a message debugging the change in speed (commented out)
           // Serial.println("Inside Mode 2, Changing speed to: " + String(targetSpeedMmS));
         }
       }
+
+
       break;
   }
 }
 
 void sendMessageCSV() {
 
+  // Construct a comma-separated value (CSV) message containing various data
+  // The data includes: distance travelled by the car in centimeters, average speed in millimeters per second,
+  // and distance to the nearest obstacle in some unit (possibly centimeters).
   messageCSV = String(int(distanceTravelledByTheCarCm)) + "," + String(int(averageSpeedMmS)) + "," + String(int(nearestObstacleDistance)) + " \n ";
 
+  // Write the constructed CSV message to the Processing client
+  // The ProcessingClient object is assumed to have a write function that accepts a character array and its length
   ProcessingClient.write(messageCSV.c_str(), messageCSV.length());
 
+  // Print the constructed CSV message (commented out)
   // Serial.println(messageCSV);
 }
 
@@ -358,18 +454,34 @@ void sendMessage() {
     message[2] = int(nearestObstacleDistance);
 
 
+
     ProcessingClient.write(message, sizeof(message));
     */
 }
 
 void calculateSpeed() {
 
-  rightTimeCurrent = millis();
-  leftTimeCurrent = millis();
+  // Update the current time for both left and right measurements
+  rightTimeCurrent = (rightTimeCurrent == rightTimeCurrentPast) ? millis() : rightTimeCurrent;
+  leftTimeCurrent = (leftTimeCurrent == leftTimeCurrentPast) ? millis() : leftTimeCurrent;
 
-  leftSpeedMmS = double(arcLengthMm / (leftTimeCurrent - leftTimePrev));  // mm/s
-  rightSpeedMmS = double(arcLengthMm / (rightTimeCurrent - rightTimePrev));
-  averageSpeedMmS = double((leftSpeedMmS + rightSpeedMmS) / 2);
+  // Keep track of a past time
+  leftTimeCurrentPast = leftTimeCurrent;
+  rightTimeCurrentPast = rightTimeCurrent;
+
+
+  // Calculate the speed of the left wheel in millimeters per second (mm/s)
+  // using the formula: speed = distance / time
+  // where distance is 'arcLengthMm' and time is the time elapsed since the previous measurement
+  leftSpeedMmS = (double)(arcLengthMm / (leftTimeCurrent - leftTimePrev));  // mm/s
+
+  // Calculate the speed of the right wheel in millimeters per second (mm/s)
+  // using the same formula as for the left wheel
+  rightSpeedMmS = (double)(arcLengthMm / (rightTimeCurrent - rightTimePrev));
+
+  // Calculate the average speed of both wheels in millimeters per second (mm/s)
+  // by taking the mean of their individual speeds
+  averageSpeedMmS = (double)((leftSpeedMmS + rightSpeedMmS) / 2);
 
 
   // Serial.print("leftSpeedMmS: ");
@@ -396,142 +508,85 @@ void calculateSpeed() {
   // Serial.println(rightTimeCurrent);
 }
 
+
+
+
 // Matrix Handling
+
+
 ArduinoLEDMatrix matrix;
 
 // Predefined patterns for the LED matrix
 
 // Smiley pattern
 const uint32_t happy[3] = {
+
   0x19819,
   0x80000001,
   0x81f8000
+
 };
 
 // Heart pattern
 const uint32_t heart[3] = {
+
   0x3184a444,
   0x44042081,
   0x100a0040
+
 };
 
 // W5 pattern
 const uint32_t W5[4] = {
+
   0x82f82882,
   0x892fba1e,
   0xe1ee1c6f,
   66
+
 };
+
 
 // Functions needed for Matrix
 
 // Function to display a smiley pattern on the LED matrix
 void displaySmiley() {
+
   matrix.loadFrame(happy);
 
   // delay(500);
+
   //  Load the predefined smiley pattern onto the LED matrix
   //  Delay is intentionally commented out for potential real-time or non-blocking behavior
 }
 
 // Function to display a heart pattern on the LED matrix
 void displayHeart() {
+
   matrix.loadFrame(heart);
 
   // delay(500);
+
   //  Load the predefined heart pattern onto the LED matrix
 }
 
 // Function to display a W5 pattern on the LED matrix
 void displayW5() {
+
   matrix.loadFrame(W5);
+
   // delay(500);
 }
 
-// Functions needed for Movement
 
-// Mapping speed to PWM values
-int mapSpeedMmSToPWM(double speed) {
-  int PWMValue = round(map(speed, MinSpeedMmS, MaxSpeedMmS, PWMMin, PWMMax));
 
-  // Serial.println("Speed: ");
-  // Serial.println(speed);
-  // Serial.println(" | Mapped PWM: ");
-  // Serial.println(floor(PWMValue));
-
-  return PWMValue;
-}
-
-// Function to move the car forward at a specified speed
-void moveForwardatSpeed(double speed) {
-
-  // Serial.print("Max forward at ");
-  // Serial.println(MaxSpeedMmS);
-
-  // Serial.print("Moving forward at ");
-  // Serial.println(speed);
-
-  // Adjust right motor PWM based on the specified speed
-  analogWrite(RightMotorPWM, mapSpeedMmSToPWM(RightWheelCoefficient * speed));
-
-  // Adjust left motor PWM based on the left wheel coefficient
-  analogWrite(LeftMotorPWM, mapSpeedMmSToPWM(LeftWheelCoefficient * speed));
-
-  // Switch on
-  digitalWrite(RightMotorSwitchActive, HIGH);
-  digitalWrite(LeftMotorSwitchActive, HIGH);
-}
-
-// Function to stop the car
-void stopCar() {
-
-  // Serial.println("Stopping car");
-
-  // Stop the right motor by setting its PWM to 0
-  analogWrite(RightMotorPWM, mapSpeedMmSToPWM(0));
-
-  // Stop the left motor by setting its PWM to 0
-  analogWrite(LeftMotorPWM, mapSpeedMmSToPWM(0));
-
-  digitalWrite(RightMotorSwitchActive, LOW);
-  digitalWrite(LeftMotorSwitchActive, LOW);
-}
-
-// Function to turn the car to the left
-void turnLeft() {
-
-  // Serial.println("Inside turnLeft - Turning left");
-
-  // Adjust the right motor PWM for a left turn
-  analogWrite(RightMotorPWM, RightWheelCoefficient * TurnSpeedOuterPulseWidth);
-
-  // Stop the left motor by setting its PWM to 0
-  analogWrite(LeftMotorPWM, LeftWheelCoefficient * TurnSpeedInnerPulseWidth);
-
-  digitalWrite(RightMotorSwitchActive, HIGH);
-  digitalWrite(LeftMotorSwitchActive, HIGH);
-}
-
-// Function to turn the car to the right
-void turnRight() {
-
-  // Serial.println("Inside turnRight - Turning right");
-
-  // Stop the right motor by setting its PWM to 0
-  analogWrite(RightMotorPWM, RightWheelCoefficient * TurnSpeedInnerPulseWidth);
-
-  // Adjust the left motor PWM for a right turn
-  analogWrite(LeftMotorPWM, LeftWheelCoefficient * TurnSpeedOuterPulseWidth);
-
-  // Switch on
-  digitalWrite(RightMotorSwitchActive, HIGH);
-  digitalWrite(LeftMotorSwitchActive, HIGH);
-}
 
 // Sensor Functions
 
+
 // Function to measure the closest obstacle distance using the ultrasonic sensor
 double closestObstacleUsingSonar() {
+
   // Set trigger pin low to ensure a clean pulse
   digitalWrite(UltrasonicTrigger, LOW);
 
@@ -551,13 +606,14 @@ double closestObstacleUsingSonar() {
   unsigned long pulseDuration = pulseIn(UltrasonicEchoDetector, HIGH, 3000);
 
   // Convert the pulse duration to distance using the speed of sound
-  // Return the distance or Overtime if no pulse received within 2 seconds
+  // Return the distance or Overtime if no pulse received within 3000 microseconds
 
   return (pulseDuration > 0) ? pulseDuration * SPEED_OF_SOUND_CM_PER_MS : Overtime;
 }
 
 // Checking the position relative to obstacles using the ultrasonic sensor
 void checkPositionRelativeToObject() {
+
   nearestObstacleDistance = closestObstacleUsingSonar();
 
   // Serial.println("Nearest obstacle distance: ");
@@ -573,9 +629,15 @@ void checkPositionRelativeToObject() {
     stopCar();
 
     return;
+
   } else {
 
+    // If obstacle is not too close, start the car
+    // or keep it moving if it is already moving
+
     obstacleTooClose = false;
+
+    // The PID runs after this
   }
 
   // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostMmS));
@@ -620,6 +682,135 @@ void keepMovingCheckingIRSensors() {
   // Serial.println("end of keepMovingCheckingIRSensors");
 }
 
+
+
+// Functions needed for Movement
+
+inline int mapSpeedMmSToPWM(double speed);
+
+// Mapping speed to PWM values
+inline int mapSpeedMmSToPWM(double speed) {
+
+  int PWMValue = round(
+    map(speed,
+        MinSpeedMmS,
+        MaxSpeedMmS,
+        PWMMin,
+        PWMMax));
+
+  // Serial.println("Speed: ");
+  // Serial.println(speed);
+  // Serial.println(" | Mapped PWM: ");
+  // Serial.println(floor(PWMValue));
+
+  return PWMValue;
+}
+
+// Function to move the car forward at a specified speed
+void moveForwardatSpeed(double speed) {
+
+  // Serial.print("Max forward at ");
+  // Serial.println(MaxSpeedMmS);
+
+  // Serial.print("Moving forward at ");
+  // Serial.println(speed);
+
+  // Adjust right motor PWM based on the specified speed
+  analogWrite(
+    RightMotorPWM,
+    mapSpeedMmSToPWM(RightWheelCoefficient * speed));
+
+  // Adjust left motor PWM based on the left wheel coefficient
+  analogWrite(
+    LeftMotorPWM,
+    mapSpeedMmSToPWM(LeftWheelCoefficient * speed));
+
+  // Switch on
+  digitalWrite(RightMotorSwitchActive, HIGH);
+
+  digitalWrite(LeftMotorSwitchActive, HIGH);
+}
+
+// Function to stop the car
+void stopCar() {
+
+  // Serial.println("Stopping car");
+
+  // Stop the right motor by setting its PWM to 0
+  analogWrite(
+    RightMotorPWM,
+    mapSpeedMmSToPWM(0));
+
+  // Stop the left motor by setting its PWM to 0
+  analogWrite(
+    LeftMotorPWM,
+    mapSpeedMmSToPWM(0));
+
+  // Switch off
+
+  digitalWrite(RightMotorSwitchActive, LOW);
+
+  digitalWrite(LeftMotorSwitchActive, LOW);
+}
+
+// Function to turn the car to the left
+void turnLeft() {
+
+  // Serial.println("Inside turnLeft - Turning left");
+
+  // Adjust the right motor PWM for a left turn
+
+  // Using direct PWM instead of mapped speeds as the car doesnt
+  // turn at too low speeds or skids at too high
+
+  analogWrite(
+    RightMotorPWM,
+    RightWheelCoefficient * TurnSpeedOuterPulseWidth);
+
+  // Stop the left motor
+  analogWrite(
+    LeftMotorPWM,
+    LeftWheelCoefficient * TurnSpeedInnerPulseWidth);
+
+  // Switch on
+
+  digitalWrite(RightMotorSwitchActive, HIGH);
+
+  digitalWrite(LeftMotorSwitchActive, HIGH);
+}
+
+// Function to turn the car to the right
+void turnRight() {
+
+  // Serial.println("Inside turnRight - Turning right");
+
+  // Stop the right motor by setting its PWM
+
+  // Using direct PWM instead of mapped speeds as the car doesnt
+  // turn at too low speeds or skids at too high
+
+  analogWrite(
+    RightMotorPWM,
+    RightWheelCoefficient * TurnSpeedInnerPulseWidth);
+
+  // Adjust the left motor PWM for a right turn
+  analogWrite(
+    LeftMotorPWM,
+    LeftWheelCoefficient * TurnSpeedOuterPulseWidth);
+
+  // Switch on
+
+  digitalWrite(RightMotorSwitchActive, HIGH);
+
+  digitalWrite(LeftMotorSwitchActive, HIGH);
+}
+
+
+
+
+// Arduino functions
+
+
 // Initialization function executed once at the start of the program
 void setup() {
 
@@ -644,11 +835,14 @@ void setup() {
   pinMode(LeftMotorPWM, OUTPUT);   // Configure the left motor PWM pin as an output
   pinMode(RightMotorPWM, OUTPUT);  // Configure the right motor PWM pin as an output
 
-  pinMode(LeftEncoder, INPUT_PULLUP);   // Configure the left motor encoder pin with pull-up resistor enabled & logic inversion (a 20 k resistor in parallel for impedence control)
+  pinMode(LeftEncoder, INPUT_PULLUP);   // Configure the left motor encoder pin with pull-up resistor enabled
   pinMode(RightEncoder, INPUT_PULLUP);  // Configure the right motor encoder pin with pull-up resistor enabled
+                                        // & logic inversion (a 20 k resistor in parallel for impedence control)
+
 
   // Initialize the LED matrix for further use
   matrix.begin();
+
 
   // Setup Connection
 
@@ -664,36 +858,68 @@ void setup() {
 
   Serial.println("1 Inside Setup 2");
 
+
+  // Coding in the Interrupts
+
+  // This sets up an ISR for the RightEncoder pin.
+  // When a rising edge is detected on this pin (which typically corresponds to a notch passing by the encoder sensor),
+  // the provided lambda function is executed
+
   attachInterrupt(
 
     digitalPinToInterrupt(RightEncoder), []() {
+      // Increment the pulse count for the right encoder
       rightPulseCount++;
 
+      // Update the previous time to the current time
       rightTimePrev = rightTimeCurrent;
+
+      // Update the current time
       rightTimeCurrent = millis();
     },
 
     RISING);
 
+
+  // Similar to the previous block, this sets up an ISR for the LeftEncoder pin.
+  // When a rising edge is detected (indicating a notch passing by the sensor),
+  // the provided lambda function is executed.
+
   attachInterrupt(
 
     digitalPinToInterrupt(LeftEncoder), []() {
+      // Increment the pulse count for the left encoder
       leftPulseCount++;
+
+      // Update the previous time to the current time
       leftTimePrev = leftTimeCurrent;
+
+      // Update the current time
       leftTimeCurrent = millis();
     },
 
     RISING);
 
+  // These ISRs are commonly used in motor control applications to accurately
+  // measure the speed and distance traveled by a rotating wheel.
+
   Serial.println(" 4 Inside Setup 3");
 
+
+  // This line initiates a while loop that continues until a connection is established with the client.
+  // It checks if the client is not connected.
 
   while (!ProcessingClient.connected()) {
 
     // Attempt to accept an incoming client connection on the WiFi server
     ProcessingClient = server.available();
 
+    // used for debugging purposes to indicate that the program is still attempting to establish a connection
     Serial.print("-");
+
+    // This line introduces a delay of 100 milliseconds.
+    // It's a common practice to add a delay when waiting for a connection attempt to prevent
+    // excessive CPU usage and to allow other tasks to be performed during the waiting period.
 
     delay(100);
   }
@@ -722,6 +948,7 @@ void loop() {
       carSpeedAlmostMmS = PIDObjectFollowing_f_1();
 
       // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostMmS));
+
     } else if (currentMode == MODE_2_Speed_Control) {
 
       carSpeedAlmostMmS = PIDMaintainSpeed_m_2();
@@ -737,15 +964,27 @@ void loop() {
 
     // Serial.println("Got into the 700th loop");
 
+    // This line calculates the distance travelled by the car in centimeters.
+    // It multiplies the sum of the pulse counts from the left and right encoders by a constant
+    // representing the circumference of the wheel (3.142 * radiusOfWheelCm) divided by the
+    // number of pulses per revolution of the encoder (EncoderPulsesPerRevolution), and assigns the result
+    // to the variable distanceTravelledByTheCarCm.
+
     distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelCm / EncoderPulsesPerRevolution;
 
+    // calculates the speed of the car based on set parameters & measurements
     calculateSpeed();
 
+    // This function sends a message, containing data such as distance travelled and car speed,
+    // in Comma-Separated Values (CSV) format, which is commonly used for data exchange between systems
     sendMessageCSV();
 
     // Reset the loop counter for the next iteration
-
     loopCounter = 0;
+
+    // reset the integrals
+    integral_m_2 /= 50;
+    integral_f_1 /= 50;
   }
 
   // Serial.println("Is the obstacleTooClose?");  // Optional debugging statement
