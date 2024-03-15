@@ -49,13 +49,13 @@ volatile unsigned long rightPulseCount = 0;  // Pulse count for the right motor 
 
 // Constants
 const double RightWheelCoefficient = 1;         // Coefficient for adjusting Right wheel speed
-const double LeftWheelCoefficient = 0.92;       // Coefficient for adjusting left wheel speed
-const double MinSpeedMmS = 0;                   // Minimum speed MmS for the car
-const double MaxSpeedMmS = 50;                  // Maximum speed MmS for the car
+const double LeftWheelCoefficient = 0.59;       // Coefficient for adjusting left wheel speed
+const double MinSpeedCmS = 0;                   // Minimum speed CmS for the car
+const double MaxSpeedCmS = 50;                  // Maximum speed CmS for the car
 const int PWMMin = 0;                           // Minimum PWM value
-const int PWMMax = 140;                         // Maximum PWM value (capping it at 140 instead of 225)
-const int TurnSpeedOuterPulseWidth = 130;       // Turning speed for outer wheel
-const int TurnSpeedInnerPulseWidth = 50;        // Turning speed for inner wheel
+const int PWMMax = 225;                         // Maximum PWM value (capping it at 140 instead of 225)
+const int TurnSpeedOuterPulseWidth = 190;       // Turning speed for outer wheel
+const int TurnSpeedInnerPulseWidth = 60;        // Turning speed for inner wheel
 const int EncoderPulsesPerRevolution = 4;       // Encoder generates 8 pulses per revolution -> 4 rising are tracked
 const int CriticalObjectDistance = 10;          // Critical distance for detecting obstacles
 const int ObjectFollowingDistance = 20;         // A slightly larger and safer distance
@@ -69,11 +69,11 @@ const double radiusOfWheelMm = 35;              // radius of wheel in mm
 // more variables
 double nearestObstacleDistance = 100;                                                                                            // Distance to the nearest obstacle from ultrasonic sensor
 bool obstacleTooClose = false;                                                                                                   // Flag indicating if an obstacle is too close
-double carSpeedAlmostMmS = MaxSpeedMmS;                                                                                          // Current speed of the car
+double carSpeedAlmostCmS = MaxSpeedCmS;                                                                                          // Current speed of the car
 unsigned long loopCounter = 0;                                                                                                   // Counter for obstacle tracking frequency
 bool StopTheCar = true;                                                                                                          // Control if you want the car to move
 double distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelMm / EncoderPulsesPerRevolution;  // How far have the wheels spun (in cm)
-double targetSpeedMmS = MaxSpeedMmS;                                                                                             // Speed to reach in mode 2
+double targetSpeedCmS = MaxSpeedCmS;                                                                                             // Speed to reach in mode 2
 
 
 
@@ -111,11 +111,11 @@ volatile unsigned long leftTimeCurrentPast = leftTimeCurrent;
 volatile unsigned long rightTimeCurrentPast = rightTimeCurrent;
 
 // Calculate left and right wheel speeds in millimeters per second (mm/s)
-double leftSpeedMmS = (double)(arcLengthMm / (leftTimeCurrent - leftTimePrev));  // mm/s
-double rightSpeedMmS = (double)(arcLengthMm / (rightTimeCurrent - rightTimePrev));
+double leftSpeedCmS = (double)(arcLengthMm / (leftTimeCurrent - leftTimePrev));  // mm/s
+double rightSpeedCmS = (double)(arcLengthMm / (rightTimeCurrent - rightTimePrev));
 
 // Calculate average speed of both wheels in millimeters per second (mm/s)
-double averageSpeedMmS = (double)((leftSpeedMmS + rightSpeedMmS) / 2);
+double averageSpeedCmS = (double)((leftSpeedCmS + rightSpeedCmS) / 2);
 
 
 
@@ -126,9 +126,9 @@ double averageSpeedMmS = (double)((leftSpeedMmS + rightSpeedMmS) / 2);
 // PID for Object Following
 
 // Define PID constants
-const double Kp_f_1 = 0.065;         // Proportional gain
-long const double Ki_f_1 = 5e-14;    // Integral gain
-const double Kd_f_1 = 0.0000000005;  // Derivative gain
+const double Kp_f_1 = 0.5;             // Proportional gain
+long const double Ki_f_1 = 0.0000025;  // Integral gain
+const double Kd_f_1 = 200;             // Derivative gain
 
 // Define variables
 double error_f_1 = 0;          // Current error
@@ -168,16 +168,16 @@ double PIDObjectFollowing_f_1() {
   previousTime_f_1 = currentTime_f_1;
 
   // Calculate next speed
-  double nextSpeed_f_1 = carSpeedAlmostMmS + controlSignal_f_1;
+  double nextSpeed_f_1 = carSpeedAlmostCmS + controlSignal_f_1;
 
   // Ensure the next speed is within bounds
-  nextSpeed_f_1 = constrain(nextSpeed_f_1, MinSpeedMmS, MaxSpeedMmS);
+  nextSpeed_f_1 = constrain(nextSpeed_f_1, MinSpeedCmS, MaxSpeedCmS);
 
 
   // Serial.println("elapsedTime_f_1 = " + String(elapsedTime_f_1));
-  // Serial.println("targetSpeedMmS = " + String(targetSpeedMmS));
-  // Serial.println("averageSpeedMmS = " + String(averageSpeedMmS));
-  // Serial.println("carSpeedAlmostMmS = " + String(carSpeedAlmostMmS));
+  // Serial.println("targetSpeedCmS = " + String(targetSpeedCmS));
+  // Serial.println("averageSpeedCmS = " + String(averageSpeedCmS));
+  // Serial.println("carSpeedAlmostCmS = " + String(carSpeedAlmostCmS));
   // Serial.println("error_f_1: " + String(error_f_1));
   // Serial.println("differential_f_1: " + String(differential_f_1 * Kd_f_1));
   // Serial.println("controlSignal_f_1: " + String(controlSignal_f_1));
@@ -192,7 +192,7 @@ double PIDObjectFollowing_f_1() {
 
 // Define PID constants
 
-const double Kp_m_2 = 0.01;        // Proportional gain
+const double Kp_m_2 = 0.005;       // Proportional gain
 const long double Ki_m_2 = 5e-12;  // Integral gain
 const double Kd_m_2 = 2e-12;       // Derivative gain
 
@@ -220,7 +220,7 @@ double PIDMaintainSpeed_m_2() {
   elapsedTime_m_2 = (double)(currentTime_m_2 - previousTime_m_2);
 
   // Calculate error
-  error_m_2 = (double)(targetSpeedMmS - averageSpeedMmS);
+  error_m_2 = (double)(targetSpeedCmS - averageSpeedCmS);
 
   // Serial.println("Error_m_2 = " + String(error_m_2));
 
@@ -238,16 +238,16 @@ double PIDMaintainSpeed_m_2() {
   previousTime_m_2 = currentTime_m_2;
 
   // Calculate next speed
-  double nextSpeed_m_2 = carSpeedAlmostMmS + controlSignal_m_2;
+  double nextSpeed_m_2 = carSpeedAlmostCmS + controlSignal_m_2;
 
   // Ensure the next speed is within bounds
-  nextSpeed_m_2 = constrain(nextSpeed_m_2, MinSpeedMmS, MaxSpeedMmS);
+  nextSpeed_m_2 = constrain(nextSpeed_m_2, MinSpeedCmS, MaxSpeedCmS);
 
 
   // Serial.println("elapsedTime_m_2 = " + String(elapsedTime_m_2));
-  // Serial.println("targetSpeedMmS = " + String(targetSpeedMmS));
-  // Serial.println("averageSpeedMmS = " + String(averageSpeedMmS));
-  // Serial.println("carSpeedAlmostMmS = " + String(carSpeedAlmostMmS));
+  // Serial.println("targetSpeedCmS = " + String(targetSpeedCmS));
+  // Serial.println("averageSpeedCmS = " + String(averageSpeedCmS));
+  // Serial.println("carSpeedAlmostCmS = " + String(carSpeedAlmostCmS));
   // Serial.println("error_m_2: " + String(error_m_2));
   // Serial.println("differential_m_2: " + String(differential_m_2 * Kd_m_2));
   // Serial.println("controlSignal_m_2: " + String(controlSignal_m_2));
@@ -263,8 +263,8 @@ double PIDMaintainSpeed_m_2() {
 
 
 // Wifi Details
-char ssid[] = "b";
-char pass[] = "h";
+char ssid[] = "2E10_AP02";
+char pass[] = "TinLizzy";
 
 // Declare an instance of the WiFiServer class named 'server'
 WiFiServer server(5200);
@@ -396,15 +396,15 @@ void checkServer() {
         int setSpeed = (data - '0' + 1) * 5;
 
         // Check if the calculated speed is within acceptable range
-        if (setSpeed > MinSpeedMmS && setSpeed <= MaxSpeedMmS) {
+        if (setSpeed > MinSpeedCmS && setSpeed <= MaxSpeedCmS) {
 
           // Update the target speed and the almost car speed with the new value
 
-          targetSpeedMmS = setSpeed;
-          carSpeedAlmostMmS = targetSpeedMmS;
+          targetSpeedCmS = setSpeed;
+          carSpeedAlmostCmS = targetSpeedCmS;
 
           // Print a message debugging the change in speed (commented out)
-          // Serial.println("Inside Mode 2, Changing speed to: " + String(targetSpeedMmS));
+          // Serial.println("Inside Mode 2, Changing speed to: " + String(targetSpeedCmS));
         }
       }
 
@@ -418,7 +418,7 @@ void sendMessageCSV() {
   // Construct a comma-separated value (CSV) message containing various data
   // The data includes: distance travelled by the car in centimeters, average speed in millimeters per second,
   // and distance to the nearest obstacle in some unit (possibly centimeters).
-  messageCSV = String(int(distanceTravelledByTheCarCm)) + "," + String(int(averageSpeedMmS)) + "," + String(int(nearestObstacleDistance)) + " \n ";
+  messageCSV = String(int(distanceTravelledByTheCarCm)) + "," + String(int(averageSpeedCmS)) + "," + String(int(nearestObstacleDistance)) + " \n ";
 
   // Write the constructed CSV message to the Processing client
   // The ProcessingClient object is assumed to have a write function that accepts a character array and its length
@@ -431,7 +431,7 @@ void sendMessageCSV() {
 void sendMessage() {
   /*
     message = "Distance travelled: " + String(int(distanceTravelledByTheCar))
-              + " Speed: " + String(int(    carSpeedAlmostMmS)
+              + " Speed: " + String(int(    carSpeedAlmostCmS)
               + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) : " No Object")
               + " Current mode: " + ((currentMode == MODE_1_Object_Following) ? "Mode1 \n" : "Mode2 \n");
 
@@ -443,14 +443,14 @@ void sendMessage() {
               + " integral: " + String(Ki * integral)
               + " differential: " + String(Kd * differential)
               + " elapsedTime: " + String(elapsedTime)
-              + " Speed: " + String(int(    carSpeedAlmostMmS)
+              + " Speed: " + String(int(    carSpeedAlmostCmS)
               + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) : " No Object")
               + " Current mode: " + ((currentMode == MODE_1_Object_Following) ? "Mode1 \n" : "Mode2 \n");
     */
 
   /*
     message[0] = int(distanceTravelledByTheCar);
-    message[1] = int(    carSpeedAlmostMmS;
+    message[1] = int(    carSpeedAlmostCmS;
     message[2] = int(nearestObstacleDistance);
 
 
@@ -462,8 +462,8 @@ void sendMessage() {
 void calculateSpeed() {
 
   // Update the current time for both left and right measurements
-  rightTimeCurrent = (rightTimeCurrent == rightTimeCurrentPast) ? millis() : rightTimeCurrent;
-  leftTimeCurrent = (leftTimeCurrent == leftTimeCurrentPast) ? millis() : leftTimeCurrent;
+  rightTimeCurrent = (rightTimeCurrent == rightTimeCurrentPast) ? (9 * rightTimeCurrent + millis()) / 10 : rightTimeCurrent;
+  leftTimeCurrent = (leftTimeCurrent == leftTimeCurrentPast) ? (9 * leftTimeCurrent + millis()) / 10 : leftTimeCurrent;
 
   // Keep track of a past time
   leftTimeCurrentPast = leftTimeCurrent;
@@ -473,19 +473,19 @@ void calculateSpeed() {
   // Calculate the speed of the left wheel in millimeters per second (mm/s)
   // using the formula: speed = distance / time
   // where distance is 'arcLengthMm' and time is the time elapsed since the previous measurement
-  leftSpeedMmS = (double)(arcLengthMm / (leftTimeCurrent - leftTimePrev));  // mm/s
+  leftSpeedCmS = (double)(arcLengthMm / (leftTimeCurrent - leftTimePrev));  // mm/s
 
   // Calculate the speed of the right wheel in millimeters per second (mm/s)
   // using the same formula as for the left wheel
-  rightSpeedMmS = (double)(arcLengthMm / (rightTimeCurrent - rightTimePrev));
+  rightSpeedCmS = (double)(arcLengthMm / (rightTimeCurrent - rightTimePrev));
 
   // Calculate the average speed of both wheels in millimeters per second (mm/s)
   // by taking the mean of their individual speeds
-  averageSpeedMmS = (double)((leftSpeedMmS + rightSpeedMmS) / 2);
+  averageSpeedCmS = (double)((leftSpeedCmS + rightSpeedCmS) / 2);
 
 
-  // Serial.print("leftSpeedMmS: ");
-  // Serial.println(leftSpeedMmS);
+  // Serial.print("leftSpeedCmS: ");
+  // Serial.println(leftSpeedCmS);
 
   // Serial.println(leftPulseCount);
 
@@ -495,8 +495,8 @@ void calculateSpeed() {
   // Serial.print("leftTimeCurrent: ");
   // Serial.println(leftTimeCurrent);
 
-  // Serial.print(" rightSpeedMmS: ");
-  // Serial.println(rightSpeedMmS);
+  // Serial.print(" rightSpeedCmS: ");
+  // Serial.println(rightSpeedCmS);
 
   // Serial.print("rightPulseCount: ");
   // Serial.println(rightPulseCount);
@@ -640,7 +640,7 @@ void checkPositionRelativeToObject() {
     // The PID runs after this
   }
 
-  // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostMmS));
+  // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostCmS));
 }
 
 // Keeping the car moving while checking infrared sensors for tracking
@@ -676,7 +676,7 @@ void keepMovingCheckingIRSensors() {
 
     // If both sensors are on track, move forward
 
-    moveForwardatSpeed(carSpeedAlmostMmS);
+    moveForwardatSpeed(carSpeedAlmostCmS);
   }
 
   // Serial.println("end of keepMovingCheckingIRSensors");
@@ -686,15 +686,15 @@ void keepMovingCheckingIRSensors() {
 
 // Functions needed for Movement
 
-inline int mapSpeedMmSToPWM(double speed);
+inline int mapSpeedCmSToPWM(double speed);
 
 // Mapping speed to PWM values
-inline int mapSpeedMmSToPWM(double speed) {
+inline int mapSpeedCmSToPWM(double speed) {
 
   int PWMValue = round(
     map(speed,
-        MinSpeedMmS,
-        MaxSpeedMmS,
+        MinSpeedCmS,
+        MaxSpeedCmS,
         PWMMin,
         PWMMax));
 
@@ -710,7 +710,7 @@ inline int mapSpeedMmSToPWM(double speed) {
 void moveForwardatSpeed(double speed) {
 
   // Serial.print("Max forward at ");
-  // Serial.println(MaxSpeedMmS);
+  // Serial.println(MaxSpeedCmS);
 
   // Serial.print("Moving forward at ");
   // Serial.println(speed);
@@ -718,12 +718,12 @@ void moveForwardatSpeed(double speed) {
   // Adjust right motor PWM based on the specified speed
   analogWrite(
     RightMotorPWM,
-    mapSpeedMmSToPWM(RightWheelCoefficient * speed));
+    mapSpeedCmSToPWM(RightWheelCoefficient * speed));
 
   // Adjust left motor PWM based on the left wheel coefficient
   analogWrite(
     LeftMotorPWM,
-    mapSpeedMmSToPWM(LeftWheelCoefficient * speed));
+    mapSpeedCmSToPWM(LeftWheelCoefficient * speed));
 
   // Switch on
   digitalWrite(RightMotorSwitchActive, HIGH);
@@ -739,12 +739,12 @@ void stopCar() {
   // Stop the right motor by setting its PWM to 0
   analogWrite(
     RightMotorPWM,
-    mapSpeedMmSToPWM(0));
+    mapSpeedCmSToPWM(0));
 
   // Stop the left motor by setting its PWM to 0
   analogWrite(
     LeftMotorPWM,
-    mapSpeedMmSToPWM(0));
+    mapSpeedCmSToPWM(0));
 
   // Switch off
 
@@ -945,15 +945,15 @@ void loop() {
 
     if (currentMode == MODE_1_Object_Following) {
 
-      carSpeedAlmostMmS = PIDObjectFollowing_f_1();
+      carSpeedAlmostCmS = PIDObjectFollowing_f_1();
 
-      // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostMmS));
+      // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostCmS));
 
     } else if (currentMode == MODE_2_Speed_Control) {
 
-      carSpeedAlmostMmS = PIDMaintainSpeed_m_2();
+      carSpeedAlmostCmS = PIDMaintainSpeed_m_2();
 
-      // Serial.println("Inside Speed PID change, changing speed to: " + String(carSpeedAlmostMmS));
+      // Serial.println("Inside Speed PID change, changing speed to: " + String(carSpeedAlmostCmS));
     }
 
   } else if (loopCounter % 31 == 0) {

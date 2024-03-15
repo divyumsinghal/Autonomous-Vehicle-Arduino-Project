@@ -5,7 +5,7 @@ import meter.*;
 
 
 // Arduino's IP address (replace with actual IP address)
-String serverAddress = "192.168.0.25";
+String serverAddress = "192.168.0.110";
 
 // Declare a Client object for network communication
 Client myClient;
@@ -30,8 +30,8 @@ boolean SwitchModes = true;
 
 // Message variables
 String Distance_travelled = "0";
-String Speed = "100";
-String ObstacleDistance = "0";
+String Speed = "50";
+String ObstacleDistance = "51";
 boolean Mode = true;
 
 // Slider
@@ -48,7 +48,7 @@ void setup()
   myClient = new Client(this, serverAddress, 5200);
 
   // Set the size of the Processing window
-  size(900, 900);
+  size(1100, 900);
 
   // Initialize controlP5
   cp5 = new ControlP5(this);
@@ -117,10 +117,15 @@ void setup()
   slide.getValueLabel().setFont(createFont("Arial", 50));
   slide.getCaptionLabel().setFont(createFont("Arial", 30)).align(ControlP5.CENTER, ControlP5.BOTTOM_OUTSIDE);
 
-  speedometer = new Meter(this, 450, 450, false);
-  speedometer.setMeterWidth(400);
-  speedometer.setUp(0, 50, 0, 50, 180, 360); // Set int minInputSignal, int maxInputSignal, float minScaleValue, float maxScaleValue, float arcMinDegrees and float arcMaxDegrees
+  speedometer = new Meter(this, 500, 380, false);
+  speedometer.setMeterWidth(600);
+  speedometer.setUp(0, 100, 0, 100, 180, 360);
+  speedometer.setMinScaleValue(0.0);
+  speedometer.setMaxScaleValue(100.0);
   speedometer.setTitle("Speed");
+
+  String[] scaleLabels = {"0", "25", "50", "75", "100"};
+  speedometer.setScaleLabels(scaleLabels);
 }
 
 
@@ -268,9 +273,10 @@ void draw()
 
   textSize(32);
   text("Distance travelled: " + Distance_travelled, 500, 100);
-  text("Obstacle distance:" + ObstacleDistance, 500, 200);
-  text("Speed: " + Speed, 500, 300);
-  text("Mode: " + (Mode ? "2" : "1"), 500, 400);
+  text("Obstacle distance: " + ((int(ObstacleDistance) > 49 )? "No Object within 50 cm" : ObstacleDistance), 500, 200);
+  text("Mode: " + (Mode ? "Speed Control" : "Object Following"), 500, 300);
+  // text("Speed: " + Speed, 500, 300);
+
 
   speedometer.updateMeter(int(Speed));
 };
