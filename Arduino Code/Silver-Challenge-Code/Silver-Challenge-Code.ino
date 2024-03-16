@@ -62,7 +62,7 @@ const int ObjectFollowingDistance = 20;         // A slightly larger and safer d
 const int Overtime = 51;                        // Return this when sonar takes too long
 const double SPEED_OF_SOUND_CM_PER_MS = 0.017;  // Conversion factor for microseconds to distance
 const double radiusOfWheelCm = 3.5;             // radius of wheel in cm
-const double radiusOfWheelMm = 35;              // radius of wheel in mm
+const double radiusOfWheel = 35;                // radius of wheel
 
 
 
@@ -72,7 +72,7 @@ bool obstacleTooClose = false;                                                  
 double carSpeedAlmostCmS = MaxSpeedCmS;                                                                                          // Current speed of the car
 unsigned long loopCounter = 0;                                                                                                   // Counter for obstacle tracking frequency
 bool StopTheCar = true;                                                                                                          // Control if you want the car to move
-double distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelMm / EncoderPulsesPerRevolution;  // How far have the wheels spun (in cm)
+double distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelCm / EncoderPulsesPerRevolution;  // How far have the wheels spun (in cm)
 double targetSpeedCmS = MaxSpeedCmS;                                                                                             // Speed to reach in mode 2
 
 
@@ -97,7 +97,7 @@ Modes currentMode = MODE_2_Speed_Control;
 // Speed of Buggy
 
 // Define arc length in millimeters based on wheel radius and angular displacement
-double arcLengthMm = (double)(1000 * radiusOfWheelMm * 45 / 360);
+double arcLengthMm = (double)(1000 * radiusOfWheel * 45 / 360);
 
 // Variables to store previous and current time for left wheel and right wheel interrupts
 volatile unsigned long leftTimePrev = millis();
@@ -188,73 +188,73 @@ double PIDObjectFollowing_f_1() {
 }
 
 
-// PID for Maintain Speed -> Speed Control
+// PID for Speed Control
 
 // Define PID constants
 
-const double Kp_m_2 = 0.005;       // Proportional gain
-const long double Ki_m_2 = 5e-12;  // Integral gain
-const double Kd_m_2 = 2e-12;       // Derivative gain
+const double Kp_sc_2 = 0.005;       // Proportional gain
+const long double Ki_sc_2 = 5e-12;  // Integral gain
+const double Kd_sc_2 = 2e-12;       // Derivative gain
 
 // Define variables
-double error_m_2 = 0;          // Current error
-double previousError_m_2 = 0;  // Error in the previous iteration
+double error_sc_2 = 0;          // Current error
+double previousError_sc_2 = 0;  // Error in the previous iteration
 
-double integral_m_2 = 0;      // Integral of the error over time
-double differential_m_2 = 0;  // Derivative of the error
+double integral_sc_2 = 0;      // Integral of the error over time
+double differential_sc_2 = 0;  // Derivative of the error
 
-double controlSignal_m_2 = 0;  // Control signal output
+double controlSignal_sc_2 = 0;  // Control signal output
 
-unsigned long currentTime_m_2 = infinity();  // Current time
-unsigned long previousTime_m_2 = millis();   // Time in the previous iteration
-double elapsedTime_m_2 = 0;                  // Elapsed time since the previous iteration
+unsigned long currentTime_sc_2 = infinity();  // Current time
+unsigned long previousTime_sc_2 = millis();   // Time in the previous iteration
+double elapsedTime_sc_2 = 0;                  // Elapsed time since the previous iteration
 
 
 // Function to calculate PID for maintaining speed
-double PIDMaintainSpeed_m_2() {
+double PIDMaintainSpeed_sc_2() {
 
   calculateSpeed();
 
   // Time
-  currentTime_m_2 = millis();
-  elapsedTime_m_2 = (double)(currentTime_m_2 - previousTime_m_2);
+  currentTime_sc_2 = millis();
+  elapsedTime_sc_2 = (double)(currentTime_sc_2 - previousTime_sc_2);
 
   // Calculate error
-  error_m_2 = (double)(targetSpeedCmS - averageSpeedCmS);
+  error_sc_2 = (double)(targetSpeedCmS - averageSpeedCmS);
 
-  // Serial.println("Error_m_2 = " + String(error_m_2));
+  // Serial.println("Error_sc_2 = " + String(error_sc_2));
 
   // Update integral
-  integral_m_2 += (abs(error_f_1) < 20) ? (double)(error_m_2 * elapsedTime_m_2) : 0;
+  integral_sc_2 += (abs(error_f_1) < 20) ? (double)(error_sc_2 * elapsedTime_sc_2) : 0;
 
   // Update differential
-  differential_m_2 = (double)((error_m_2 - previousError_m_2) / elapsedTime_m_2);
+  differential_sc_2 = (double)((error_sc_2 - previousError_sc_2) / elapsedTime_sc_2);
 
   // Calculate control signal
-  controlSignal_m_2 = (double)(Kp_m_2 * error_m_2 + Ki_m_2 * integral_m_2 + Kd_m_2 * differential_m_2);
+  controlSignal_sc_2 = (double)(Kp_sc_2 * error_sc_2 + Ki_sc_2 * integral_sc_2 + Kd_sc_2 * differential_sc_2);
 
   // Update previous error & time
-  previousError_m_2 = error_m_2;
-  previousTime_m_2 = currentTime_m_2;
+  previousError_sc_2 = error_sc_2;
+  previousTime_sc_2 = currentTime_sc_2;
 
   // Calculate next speed
-  double nextSpeed_m_2 = carSpeedAlmostCmS + controlSignal_m_2;
+  double nextSpeed_sc_2 = carSpeedAlmostCmS + controlSignal_sc_2;
 
   // Ensure the next speed is within bounds
-  nextSpeed_m_2 = constrain(nextSpeed_m_2, MinSpeedCmS, MaxSpeedCmS);
+  nextSpeed_sc_2 = constrain(nextSpeed_sc_2, MinSpeedCmS, MaxSpeedCmS);
 
 
-  // Serial.println("elapsedTime_m_2 = " + String(elapsedTime_m_2));
+  // Serial.println("elapsedTime_sc_2 = " + String(elapsedTime_sc_2));
   // Serial.println("targetSpeedCmS = " + String(targetSpeedCmS));
   // Serial.println("averageSpeedCmS = " + String(averageSpeedCmS));
   // Serial.println("carSpeedAlmostCmS = " + String(carSpeedAlmostCmS));
-  // Serial.println("error_m_2: " + String(error_m_2));
-  // Serial.println("differential_m_2: " + String(differential_m_2 * Kd_m_2));
-  // Serial.println("controlSignal_m_2: " + String(controlSignal_m_2));
-  // Serial.println("nextSpeed_m_2: " + String(nextSpeed_m_2) + "\n");
+  // Serial.println("error_sc_2: " + String(error_sc_2));
+  // Serial.println("differential_sc_2: " + String(differential_sc_2 * Kd_sc_2));
+  // Serial.println("controlSignal_sc_2: " + String(controlSignal_sc_2));
+  // Serial.println("nextSpeed_sc_2: " + String(nextSpeed_sc_2) + "\n");
 
 
-  return nextSpeed_m_2;
+  return nextSpeed_sc_2;
 }
 
 
@@ -355,7 +355,7 @@ void checkServer() {
 
       currentMode = MODE_2_Speed_Control;
 
-      integral_m_2 = 0;
+      integral_sc_2 = 0;
 
       break;
 
@@ -951,7 +951,7 @@ void loop() {
 
     } else if (currentMode == MODE_2_Speed_Control) {
 
-      carSpeedAlmostCmS = PIDMaintainSpeed_m_2();
+      carSpeedAlmostCmS = PIDMaintainSpeed_sc_2();
 
       // Serial.println("Inside Speed PID change, changing speed to: " + String(carSpeedAlmostCmS));
     }
@@ -983,7 +983,7 @@ void loop() {
     loopCounter = 0;
 
     // reset the integrals
-    integral_m_2 /= 50;
+    integral_sc_2 /= 50;
     integral_f_1 /= 50;
   }
 
