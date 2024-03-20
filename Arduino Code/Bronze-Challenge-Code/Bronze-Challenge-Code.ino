@@ -60,7 +60,7 @@ float nearestObstacleDistance = 100;                                            
 bool obstacleTooClose = false;                                                                                              // Flag indicating if an obstacle is too close
 float carSpeed = MaxSpeed;                                                                                                  // Current speed of the car
 unsigned long loopCounter = 0;                                                                                              // Counter for obstacle tracking frequency
-bool StopTheCar = false;                                                                                                    // Control if you want the car to move
+bool StopTheCarThroughGUI = false;                                                                                                    // Control if you want the car to move
 String message;                                                                                                             // Message to send to the client
 float distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;  // How far have the wheels spun (in cm)
 
@@ -115,14 +115,14 @@ void checkServer() {
   switch (data) {
     case startURL:
       Serial.println(data);
-      StopTheCar = false;
+      StopTheCarThroughGUI = false;
       moveForwardatSpeed(carSpeed);
       // Serial.println(data);
       break;
 
     case stopURL:
       // Serial.println(data);
-      StopTheCar = true;
+      StopTheCarThroughGUI = true;
       stopCar();
       break;
 
@@ -490,14 +490,14 @@ void loop() {
   // Serial.println("Is the obstacleTooClose?");  // Optional debugging statement
   // Serial.println(obstacleTooClose);  // Optional debugging statement
 
-  if (!obstacleTooClose && !StopTheCar) {
+  if (!obstacleTooClose && !StopTheCarThroughGUI) {
 
     // Continue moving and checking infrared sensors if no obstacles are too close
     //  Serial.print("MOVE BRO?");  // Optional debugging statement
 
     keepMovingCheckingIRSensors();
 
-  } else if (!StopTheCar)  //obstacleTooClose &&
+  } else if (!StopTheCarThroughGUI)  //obstacleTooClose &&
   {
 
     delayMicroseconds(100);
