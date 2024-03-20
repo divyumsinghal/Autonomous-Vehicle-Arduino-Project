@@ -39,7 +39,7 @@ double nearestObstacleDistance = 100;
 bool obstacleTooClose = false;
 double carSpeedAlmostCmS = MaxSpeedCmS;
 unsigned long loopCounter = 0;
-bool StopTheCar = false;
+bool StopTheCarThroughGUI = false;
 double distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelCm / EncoderPulsesPerRevolution;
 double targetSpeedCmS = MaxSpeedCmS;
 

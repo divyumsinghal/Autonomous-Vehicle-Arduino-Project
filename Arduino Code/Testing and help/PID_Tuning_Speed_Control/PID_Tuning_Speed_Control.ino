@@ -39,7 +39,7 @@ double nearestObstacleDistance = 100;
 bool obstacleTooClose = false;
 double carSpeedAlmostCmS = MaxSpeedCmS;
 unsigned long loopCounter = 0;
-bool StopTheCar = true;
+bool StopTheCarThroughGUI = true;
 double distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelCm / EncoderPulsesPerRevolution;
 double targetSpeedCmS = MaxSpeedCmS;
 
@@ -299,9 +299,9 @@ void loop() {
 
     integral_sc_2 /= 50;
   }
-  if (!obstacleTooClose && !StopTheCar) {
+  if (!obstacleTooClose && !StopTheCarThroughGUI) {
     keepMovingCheckingIRSensors();
-  } else if (!StopTheCar) {
+  } else if (!StopTheCarThroughGUI) {
     delayMicroseconds(3000);
     checkPositionRelativeToObject();
   }

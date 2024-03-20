@@ -1,3 +1,5 @@
+// Guthub: https://github.com/divyumsinghal/Autonomous-Vehicle-Arduino-Project
+
 // URLs for different car commands sent from processing to arduino
 
 #define startURL 'Z'
@@ -68,7 +70,7 @@ double nearestObstacleDistance = 100;                                           
 bool obstacleTooClose = false;                                                                                                   // Flag indicating if an obstacle is too close
 double carSpeedAlmostCmS = MaxSpeedCmS;                                                                                          // Current speed of the car
 unsigned long loopCounter = 0;                                                                                                   // Counter for obstacle tracking frequency
-bool StopTheCar = true;                                                                                                          // Control if you want the car to move
+bool StopTheCarThroughGUI = true;                                                                                                          // Control if you want the car to move
 double distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelCm / EncoderPulsesPerRevolution;  // How far have the wheels spun (in cm)
 double targetSpeedCmS = MaxSpeedCmS;                                                                                             // Speed to reach in mode 2
 
@@ -387,7 +389,7 @@ void checkServer() {
 
       // Serial.println(data);
 
-      StopTheCar = false;
+      StopTheCarThroughGUI = false;
 
       // Serial.println(data);
 
@@ -397,7 +399,7 @@ void checkServer() {
 
       // Serial.println(data);
 
-      StopTheCar = true;
+      StopTheCarThroughGUI = true;
 
       stopCar();
 
@@ -1006,14 +1008,14 @@ void loop() {
   // Serial.println("Is the obstacleTooClose?");  // Optional debugging statement
   // Serial.println(obstacleTooClose);            // Optional debugging statement
 
-  if (!obstacleTooClose && !StopTheCar) {
+  if (!obstacleTooClose && !StopTheCarThroughGUI) {
 
     // Continue moving and checking infrared sensors if no obstacles are too close
     // Serial.print("MOVE BRO?");  // Optional debugging statement
 
     keepMovingCheckingIRSensors();
 
-  } else if (!StopTheCar)  // obstacleTooClose &&
+  } else if (!StopTheCarThroughGUI)  // obstacleTooClose &&
   {
 
     delayMicroseconds(3000);
