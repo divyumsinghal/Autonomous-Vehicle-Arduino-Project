@@ -1,3 +1,6 @@
+//Speed of critical section for serial print: 2906 milliseconds/10000 loop
+// Speed of critical section for sendprocessing: 2753 milliseconds/10000 loop
+
 // Import the ControlP5, processing.net and meter libraries
 import processing.net.*;
 import controlP5.*;

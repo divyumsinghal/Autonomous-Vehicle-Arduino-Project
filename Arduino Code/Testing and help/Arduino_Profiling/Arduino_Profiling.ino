@@ -1104,8 +1104,8 @@ void loop() {
   Serial.print("Speed of critical section for ");
   Serial.print(sendprocessing? "sendprocessing: ": "!sendprocessing: ");
 
-  Serial.print(elapsedTime / 10000);
-  Serial.println(" milliseconds/loop");
+  Serial.print(elapsedTime);
+  Serial.println(" milliseconds/10000 loop");
 
   // Add a delay or other code as needed
   delay(1000);
