@@ -5,7 +5,7 @@ import meter.*;
 
 
 // Arduino's IP address (replace with actual IP address)
-String serverAddress = "192.168.0.110";
+String serverAddress = "192.168.4.1";
 
 // Declare a Client object for network communication
 Client myClient;
@@ -20,19 +20,18 @@ char stopURL = 'X';
 char displayHeartURL = 'H';
 char displaySmileyURL = 'S';
 char displayW5URL = 'W';
-char mode1URL = 'A';
-char mode2URL = 'B';
+
 
 // booleans for switches
 boolean StopStart = false;
 
-boolean SwitchModes = true;
 
 // Message variables
 String Distance_travelled = "0";
-String Speed = "50";
-String ObstacleDistance = "51";
-boolean Mode = true;
+String SpeedTravelled = "0";
+String SpeedPWMpercent = "0";
+String ObstacleDistance = "5";
+String Mode = "2";
 
 // Slider
 Slider slide;
@@ -48,7 +47,7 @@ void setup()
   myClient = new Client(this, serverAddress, 5200);
 
   // Set the size of the Processing window
-  size(1100, 900);
+  size(1200, 900);
 
   // Initialize controlP5
   cp5 = new ControlP5(this);
@@ -72,15 +71,6 @@ void setup()
     .setCaptionLabel("OFF/ON")
     .getCaptionLabel().setFont(createFont("Arial", 30));
 
-  cp5.addToggle("SwitchModes")
-    .setPosition(buttonX, buttonY + buttonSpacing)
-    .setSize(100, 20)
-    .setValue(true)
-    .setSize(buttonWidth, buttonHeight)
-    .setMode(ControlP5.SWITCH)
-    .setColorActive(color(100, 100, 100))
-    .setCaptionLabel("Mode1/Mode2")
-    .getCaptionLabel().setFont(createFont("Arial", 30));
 
 
   // Add buttons to the GUI for controlling LED matrix display
@@ -159,19 +149,6 @@ void StopStart(boolean theFlag)
   }
 }
 
-void SwitchModes(boolean theFlag)
-{
-  if (theFlag)
-  {
-    sendCommand(mode2URL);
-    //cp5.setColorBackground(color(0,255,0));
-  } else
-  {
-    sendCommand(mode1URL);
-    //cp5.setColorBackground(color(255,0,0));
-  }
-  Mode = theFlag;
-}
 
 // Display a heart on the LED matrix
 public void displayHeart()
@@ -195,29 +172,6 @@ void SpeedControl(int speed) {
   sendCommand(char((char) ((speed - 1) + '0')));
 }
 
-void readClientArr()
-{
-  byte[] data = new byte[3]; // Assuming your data array has 3 elements
-
-  // Read data from the client
-  int bytesRead = myClient.readBytes(data);
-
-  if (bytesRead == data.length) {
-    // Successfully read the expected number of bytes
-
-    // Now you can interpret and print the data
-
-    println(
-      "Distance travelled: " + data[0] +
-      " Speed: " + data[1] +
-      " Obstacle: " + data[2] +
-      " Mode: " + ((Mode) ? "mode 2" : "mode 1")
-      );
-  } else {
-    // Handle the case where not enough bytes were read
-    println("Error reading data from the client");
-  }
-}
 
 String[] values;
 String message = "0,0,0";
@@ -232,22 +186,15 @@ void readClientCSV()
     // Split the message into individual values
     values = split(message, ',');
 
-    if (values.length == 3)
+    if (values.length == 5)
     {
       // Successfully split the message into three values
 
       Distance_travelled = values[0];
-      Speed = values[1];
+      SpeedTravelled = values[1];
       ObstacleDistance = values[2];
-
-      // Now you can interpret and print the values
-      println
-        (
-        "Control Signal: " + values[0] +
-        " Speed: " + values[1] +
-        " Obstacle: " + values[2] +
-        " Mode: " + ((Mode) ? "mode 2" : "mode 1")
-        );
+      SpeedPWMpercent = values[3];
+      Mode = values[4];
     }
   };
 }
@@ -273,10 +220,11 @@ void draw()
 
   textSize(32);
   text("Distance travelled: " + Distance_travelled, 500, 100);
-  text("Obstacle distance: " + ((int(ObstacleDistance) > 49 )? "No Object within 50 cm" : ObstacleDistance), 500, 200);
-  text("Mode: " + (Mode ? "Speed Control" : "Object Following"), 500, 300);
+  text("Obstacle distance: " + ((ObstacleDistance.charAt(0) == '5')? "No Object within 50 cm" : ObstacleDistance), 500, 200);
+  text("Mode: " + (Mode.charAt(0) == '1' ? "Object Following" : "Speed Control"), 500, 300);
+  text("Speed percentage of PWM Signal: " + SpeedPWMpercent, 500, 800);
   // text("Speed: " + Speed, 500, 300);
 
 
-  speedometer.updateMeter(int(Speed));
+  speedometer.updateMeter(int(SpeedTravelled));
 };
