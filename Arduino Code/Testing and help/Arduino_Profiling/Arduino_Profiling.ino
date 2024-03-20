@@ -1,3 +1,65 @@
+/*
+ * Profiler.ino
+ *
+ * Example Arduino sketch for the Arduino Profiler library
+ *
+ * version 1.0 -  August 2023 ++trent m. wyatt
+ * version 1.1 - October 2023
+ *    added optional debug pin support
+ *
+
+
+  #include <Profiler.h>
+
+  #define   DEBUG_LED   13
+
+  // Example function that will be profiled including debug pin output:
+  //
+  void foo() {
+      profiler_t profiler(DEBUG_LED);
+
+      delay(1000);
+  }
+
+  // Example function where only part of the code
+  // will be profiled using a temporary scope
+  //
+  void bar() {
+      // this code will not be profiled.
+      // yes the code is pointless heh
+      for (int i=0; i < 10; i++) {
+          delay(100);
+      }
+
+      // create a temporary scope just to contain the instantiation of a profiler_t
+      // object in order to time a smaller section of code inside a larger section
+      {
+          profiler_t profiler;
+
+          delay(500);
+      }
+
+      // more pointless code that will not be profiled
+      for (int i=0; i < 10; i++) {
+          delay(100);
+      }
+  }
+
+  void setup() {
+      Serial.begin(115200);
+      while (!Serial);
+
+      foo();
+
+      bar();
+  }
+
+  void loop() { }
+
+*/
+
+bool sendprocessing = true;
+
 // URLs for different car commands sent from processing to arduino
 
 #define startURL 'Z'
@@ -60,11 +122,11 @@ const int ObjectFollowingDistance = 20;         // A slightly larger and safer d
 const int Overtime = 51;                        // Return this when sonar takes too long
 const double SPEED_OF_SOUND_CM_PER_MS = 0.017;  // Conversion factor for microseconds to distance
 const double radiusOfWheelCm = 3.5;             // radius of wheel in cm
-const double arcLengthCorrection = 0.3;          // correction for speed
+const double arcLengthCorrection = 0.3;         // correction for speed
 
 
-  // more variables
-  double nearestObstacleDistance = 100;                                                                                          // Distance to the nearest obstacle from ultrasonic sensor
+// more variables
+double nearestObstacleDistance = 100;                                                                                            // Distance to the nearest obstacle from ultrasonic sensor
 bool obstacleTooClose = false;                                                                                                   // Flag indicating if an obstacle is too close
 double carSpeedAlmostCmS = MaxSpeedCmS;                                                                                          // Current speed of the car
 unsigned long loopCounter = 0;                                                                                                   // Counter for obstacle tracking frequency
@@ -471,10 +533,11 @@ void sendMessageCSV() {
 
   // Write the constructed CSV message to the Processing client
   // The ProcessingClient object is assumed to have a write function that accepts a character array and its length
-  ProcessingClient.write(messageCSV.c_str(), messageCSV.length());
 
-  // Print the constructed CSV message (commented out)
-  // Serial.println(messageCSV);
+  if (sendprocessing)
+    ProcessingClient.write(messageCSV.c_str(), messageCSV.length());
+  else
+    Serial.println(messageCSV);
 }
 
 
@@ -946,7 +1009,7 @@ void setup() {
 }
 
 // Main execution loop function that runs continuously after setup
-void loop() {
+void loopTest() {
 
   // Delegate the primary control logic
   // Serial.print('.');
@@ -1025,4 +1088,37 @@ void loop() {
   loopCounter++;
 
   // Serial.println("end of loop");
+}
+
+
+
+void loop() {
+  unsigned long startTime = millis();
+
+  // Code section to profile
+  criticalSection();
+
+  unsigned long endTime = millis();
+  unsigned long elapsedTime = endTime - startTime;
+
+  Serial.print("Speed of critical section for ");
+  Serial.print(sendprocessing? "sendprocessing: ": "!sendprocessing: ");
+
+  Serial.print(elapsedTime / 10000);
+  Serial.println(" milliseconds/loop");
+
+  // Add a delay or other code as needed
+  delay(1000);
+
+  sendprocessing = !sendprocessing;
+}
+
+void criticalSection() {
+
+  // Simulate a critical section consuming CPU time
+  for (int i = 0; i < 10000; ++i) {
+    // Some computation
+    loopTest();
+  }
+  
 }

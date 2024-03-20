@@ -68,8 +68,8 @@ float distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * r
 // Wifi
 
 // Wifi Details
-char ssid[] = "wifi";
-char pass[] = "password";
+char ssid[] = "w5shouldget100";
+char pass[] = "bestgroupfr123";
 
 // Declare an instance of the WiFiServer class named 'server'
 WiFiServer server(5200);
@@ -84,7 +84,9 @@ void connectionSetup() {
   Serial.println("Inside connection setup");
 
   // Initiate a connection to the WiFi network using the provided SSID and password
-  WiFi.begin(ssid, pass);
+  WiFi.beginAP(ssid, pass);
+
+  delay(5000);
 
   // Obtain the local IP address assigned to the Arduino on the WiFi network
   IPAddress ip = WiFi.localIP();
@@ -218,7 +220,7 @@ int mapSpeedToPWM(float speed) {
 // Function to move the car forward at a specified speed
 void moveForwardatSpeed(float speed) {
   // Serial.print("Moving forward at ");
-   Serial.println(speed);
+  // Serial.println(speed);
 
   // Adjust right motor PWM based on the specified speed
   analogWrite(RightMotorPWM, mapSpeedToPWM(RightWheelCoefficient * speed));
@@ -456,16 +458,16 @@ void loop() {
     distanceTravelledByTheCar = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution;
     
 
-    message = "Distance travelled: " + String(int(distanceTravelledByTheCar))
-              + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) + "\n" : " No Object \n");
+    // message = "Distance travelled: " + String(int(distanceTravelledByTheCar))
+    //           + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) + "\n" : " No Object \n");
 
 
     // Serial.println(message);
-    ProcessingClient.write(message.c_str(), message.length());
+    // ProcessingClient.write(message.c_str(), message.length());
 
     
 
-    /*
+    
 
     message = "Distance travelled: " + String(int((leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution))
               + " Left travelled: " + String(int((leftPulseCount)*3.142 * radiusOfWheel / EncoderPulsesPerRevolution))
@@ -473,10 +475,10 @@ void loop() {
               + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) + "\n" : " No Object \n");
 
 
-    */
+  
 
-    // Serial.println(message);
-    ProcessingClient.write(message.c_str(), message.length());
+     Serial.println(message);
+    // ProcessingClient.write(message.c_str(), message.length());
 
 
     // Reset the loop counter for the next iteration
