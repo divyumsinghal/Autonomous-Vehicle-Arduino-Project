@@ -39,7 +39,7 @@ double nearestObstacleDistance = 100;
 bool obstacleTooClose = false;
 double carSpeedAlmostCmS = MaxSpeedCmS;
 unsigned long loopCounter = 0;
-bool StopTheCar = true;
+bool StopTheCar = false;
 double distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelCm / EncoderPulsesPerRevolution;
 double targetSpeedCmS = MaxSpeedCmS;
 
@@ -83,13 +83,17 @@ double PIDObjectFollowing_f_1() {
   return nextSpeed_f_1;
 }
 
-/*
+
 
 // Autotuning constants
 double Ku = 0.6 * Kp_f_1;
 double Tu = millis();
-double Ki_auto(){ return 0.45 * Ku / Tu ; };
-double Kd_auto(){ return 0.125 * Ku * Tu ; };
+double Ki_auto() {
+  return 0.45 * Ku / Tu;
+};
+double Kd_auto() {
+  return 0.125 * Ku * Tu;
+};
 
 double currentTime_u = infinity();
 double previousTime_u = millis();
@@ -106,7 +110,7 @@ void autotunePID() {
   currentTime_u = millis();
   Tu = (double)(currentTime_u - previousTime_u);
 
-  Ku = (Ku * ((MaxSpeedCmS - MinSpeedCmS))) / ( maxSoFar - minSoFar);
+  Ku = (Ku * ((MaxSpeedCmS - MinSpeedCmS))) / (maxSoFar - minSoFar);
 
   Kp_f_1 = Ku;
   Ki_f_1 = Ki_auto();
@@ -115,7 +119,7 @@ void autotunePID() {
   previousTime_u = currentTime_u;
 }
 
-*/
+
 void calculateSpeed() {
   rightTimeCurrent = (rightTimeCurrent == rightTimeCurrentPast) ? (9 * rightTimeCurrent + millis()) / 10 : rightTimeCurrent;
   leftTimeCurrent = (leftTimeCurrent == leftTimeCurrentPast) ? (9 * leftTimeCurrent + millis()) / 10 : leftTimeCurrent;
@@ -325,18 +329,15 @@ void loop() {
     autotunePID();
 
   } else if (loopCounter % 700 == 0) {
-    
+
     Serial.println("Kp : " + String(Kp_f_1) + " Ki : " + String(Ki_f_1) + " Kd : " + String(Kd_f_1));
 
     loopCounter = 0;
     integral_f_1 /= 50;
   }
-  if (!obstacleTooClose && !StopTheCar) {
-    keepMovingCheckingIRSensors();
-  } else if (!StopTheCar) {
-    delayMicroseconds(3000);
-    checkPositionRelativeToObject();
-  }
+
+  moveForwardatSpeed(carSpeedAlmostCmS);
+
 
   loopCounter++;
 }

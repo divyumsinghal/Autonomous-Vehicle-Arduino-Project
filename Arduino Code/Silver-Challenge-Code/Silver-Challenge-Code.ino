@@ -46,13 +46,13 @@ volatile unsigned long rightPulseCount = 0;  // Pulse count for the right motor 
 
 
 // Constants
-const double RightWheelCoefficient = 0.92;      // Coefficient for adjusting Right wheel speed
+const double RightWheelCoefficient = 0.87;      // Coefficient for adjusting Right wheel speed
 const double LeftWheelCoefficient = 1;          // Coefficient for adjusting left wheel speed
 const double MinSpeedCmS = 0;                   // Minimum speed CmS for the car
 const double MaxSpeedCmS = 50;                  // Maximum speed CmS for the car
 const int PWMMin = 0;                           // Minimum PWM value
-const int PWMMax = 145;                         // Maximum PWM value (capping it at 135 instead of 255)
-const int TurnSpeedOuterPulseWidth = 110;       // Turning speed for outer wheel
+const int PWMMax = 140;                         // Maximum PWM value (capping it at 135 instead of 255)
+const int TurnSpeedOuterPulseWidth = 115;       // Turning speed for outer wheel
 const int TurnSpeedInnerPulseWidth = 30;        // Turning speed for inner wheel
 const int EncoderPulsesPerRevolution = 4;       // Encoder generates 8 pulses per revolution -> 4 rising are tracked
 const int CriticalObjectDistance = 10;          // Critical distance for detecting obstacles
@@ -60,11 +60,11 @@ const int ObjectFollowingDistance = 20;         // A slightly larger and safer d
 const int Overtime = 51;                        // Return this when sonar takes too long
 const double SPEED_OF_SOUND_CM_PER_MS = 0.017;  // Conversion factor for microseconds to distance
 const double radiusOfWheelCm = 3.5;             // radius of wheel in cm
-const double arcLengthCorrection = 0.3;          // correction for speed
+const double arcLengthCorrection = 0.35;         // correction for speed
 
 
-  // more variables
-  double nearestObstacleDistance = 100;                                                                                          // Distance to the nearest obstacle from ultrasonic sensor
+// more variables
+double nearestObstacleDistance = 100;                                                                                            // Distance to the nearest obstacle from ultrasonic sensor
 bool obstacleTooClose = false;                                                                                                   // Flag indicating if an obstacle is too close
 double carSpeedAlmostCmS = MaxSpeedCmS;                                                                                          // Current speed of the car
 unsigned long loopCounter = 0;                                                                                                   // Counter for obstacle tracking frequency
@@ -215,7 +215,7 @@ double PIDObjectFollowing_f_1() {
   currentTime_f_1 = millis();
   elapsedTime_f_1 = (double)(currentTime_f_1 - previousTime_f_1);
 
-  // Calculate error
+  // Calculate error is proportional
   error_f_1 = (double)(nearestObstacleDistance - ObjectFollowingDistance);
 
   // Update integral
@@ -637,7 +637,7 @@ void checkPositionRelativeToObject() {
 
     // If obstacle is not too close, start the car
     // or keep it moving if it is already moving
-
+     
     obstacleTooClose = false;
 
     // The PID runs after this
@@ -660,12 +660,12 @@ void keepMovingCheckingIRSensors() {
 
   // Serial.println("got inside keepMovingCheckingIRSensors");
 
-  // int irLeftValue = digitalRead(LeftIRSensorInput);
-  // int irRightValue = digitalRead(RightIRSensorInput);
+  int irLeftValue = digitalRead(LeftIRSensorInput);
+  int irRightValue = digitalRead(RightIRSensorInput);
 
   // Move straight for debugging
-  int irLeftValue = LOW;
-  int irRightValue = LOW;
+  // int irLeftValue = LOW;
+  // int irRightValue = LOW;
 
   // Serial.println(irLeftValue);
   // Serial.println(irRightValue);
