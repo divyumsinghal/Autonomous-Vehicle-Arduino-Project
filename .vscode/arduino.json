@@ -1,7 +1,7 @@
 {
     "port": "COM5",
     "board": "arduino:renesas_uno:unor4wifi",
-    "sketch": "Arduino Code\\Testing and help\\Check_I2C_Connection\\Check_I2C_Connection.ino",
+    "sketch": "Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino",
     "output": "build/",
     "includePath": [
         "${workspaceFolder}/**",
