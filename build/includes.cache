@@ -10,102 +10,17 @@
     "Includepath": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\variants\\UNOWIFIR4"
   },
   {
-    "Sourcefile": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\build\\sketch\\Gold-Challenge-Code.ino.cpp",
-    "Include": "Arduino_LED_Matrix.h",
-    "Includepath": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\Arduino_LED_Matrix\\src"
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\build\\sketch\\Gold-Challenge-Code.ino.cpp",
-    "Include": "WiFiS3.h",
-    "Includepath": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\WiFiS3\\src"
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\build\\sketch\\Gold-Challenge-Code.ino.cpp",
-    "Include": "HUSKYLENS.h",
-    "Includepath": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries\\HUSKYLENS"
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\build\\sketch\\Gold-Challenge-Code.ino.cpp",
+    "Sourcefile": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\build\\sketch\\Check_I2C_Connection.ino.cpp",
     "Include": "Wire.h",
     "Includepath": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\Wire"
   },
   {
-    "Sourcefile": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\build\\sketch\\Gold-Challenge-Code.ino.cpp",
-    "Include": "SoftwareSerial.h",
-    "Includepath": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\SoftwareSerial\\src"
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\build\\sketch\\Gold-Challenge-Code.ino.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\WiFiS3\\src\\Modem.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\WiFiS3\\src\\StringHelpers.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\WiFiS3\\src\\WiFi.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\WiFiS3\\src\\WiFiClient.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\WiFiS3\\src\\WiFiFileSystem.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\WiFiS3\\src\\WiFiSSLClient.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\WiFiS3\\src\\WiFiServer.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\WiFiS3\\src\\WiFiUdp.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries\\HUSKYLENS\\DFRobot_HuskyLens.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries\\HUSKYLENS\\HUSKYLENS.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries\\HUSKYLENS\\HUSKYLENSMindPlus.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries\\HUSKYLENS\\HuskyLensProtocolCore.c",
+    "Sourcefile": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\build\\sketch\\Check_I2C_Connection.ino.cpp",
     "Include": "",
     "Includepath": null
   },
   {
     "Sourcefile": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\Wire\\Wire.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
-    "Sourcefile": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\renesas_uno\\1.1.0\\libraries\\SoftwareSerial\\src\\SoftwareSerial.cpp",
     "Include": "",
     "Includepath": null
   }
