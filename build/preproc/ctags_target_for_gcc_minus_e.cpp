@@ -1,5 +1,5 @@
 # 1 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
-// Guthub: https://github.com/divyumsinghal/Autonomous-Vehicle-Arduino-Project
+// GitHub: https://github.com/divyumsinghal/Autonomous-Vehicle-Arduino-Project
 
 // URLs for different car commands sent from processing to arduino
 
@@ -70,6 +70,8 @@ bool StopTheCarThroughGUI = true; // Control if you want the car to move
 bool StopTheCarThroughLens = true; // Control if you want the car to move
 double distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelCm / EncoderPulsesPerRevolution; // How far have the wheels spun (in cm)
 double targetSpeedCmS = MaxSpeedCmS; // Speed to reach in mode 2
+double leftIRSensorSwitchedOnByLens = true; // Switch on or off IR sensors using husky lens
+double rightIRSensorSwitchedOnByLens = true;
 
 // MODES
 
@@ -107,6 +109,8 @@ double rightSpeedCmS = (double)(arcLengthCmMilli / (rightTimeCurrent - rightTime
 
 // Calculate average speed of both wheels in millimeters per second (mm/s)
 double experimentalSpeedCmS = (double)((leftSpeedCmS + rightSpeedCmS) / 2);
+
+// calculate the speed of the Car
 
 void calculateSpeed()
 {
@@ -156,29 +160,12 @@ void calculateSpeed()
   // Serial.println(rightTimeCurrent);
 }
 
-/*
-
-double experimentalSpeedCmS;
-double prevDistanceCm = 0;
-double prevtime = 0;
-
-void calculateSpeed() {
-
-  distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelCm / EncoderPulsesPerRevolution;
-
-  experimentalSpeedCmS = (double)(1e6) * (distanceTravelledByTheCarCm - prevDistanceCm) / (micros() - prevtime);
-
-  prevDistanceCm = distanceTravelledByTheCarCm;
-  prevtime = micros();
-}
-
-*/
-
 // PID
 
 // PID for Object Following
 
-// Define PID constants
+// Define PID constants for object following
+
 const double Kp_f_1 = 0.5; // Proportional gain
 long const double Ki_f_1 = 0.0000025; // Integral gain
 const double Kd_f_1 = 200; // Derivative gain
@@ -240,17 +227,17 @@ double PIDObjectFollowing_f_1()
 
 // PID for Speed Control
 
-// Define PID constants
+// Define PID constants for speed Control
 
 const double Kp_sc_2 = 0.025; // Proportional gain
-const long double Ki_sc_2 = 5e-10; // Integral gain
+const long double Ki_sc_2 = 5e-10; // integral gain
 const double Kd_sc_2 = 2e-8; // Derivative gain
 
 // Define variables
 double error_sc_2 = 0; // Current error
 double previousError_sc_2 = 0; // Error in the previous iteration
 
-double integral_sc_2 = 0; // Integral of the error over time
+double integral_sc_2 = 0; // integral of the error over time
 double differential_sc_2 = 0; // Derivative of the error
 
 double controlSignal_sc_2 = 0; // Control signal output
@@ -305,6 +292,161 @@ double PIDMaintainSpeed_sc_2()
   return nextSpeed_sc_2;
 }
 
+// Huskly lens
+
+HUSKYLENS huskylens;
+
+// Define an enumeration for Tags
+enum TAG
+{
+
+  TAG_0, // Nothing
+  TAG_1_Start, // Start
+  TAG_2_Stop, // Stop
+  TAG_3_heart, // heart
+  TAG_4_Smiley, // Smiley
+  TAG_5_W5, // W5
+  TAG_6_Slow_Down, // Slow Down
+  TAG_7_Speed_Up, // Speed UP
+  TAG_8_Turn_Left, // Turn Left
+  TAG_9_Turn_Right // Turn Right
+
+};
+
+// Setup Husky Lens
+
+void huskyLensSetup()
+{
+
+  // Initialize the I2C communication bus
+  Wire.begin();
+
+  // Attempt to initialize communication with the Huskylens using I2C
+  while (!huskylens.begin(Wire))
+  {
+
+    // Print a failure message to the Serial Monitor
+    _UART1_.println(F("Begin failed!"));
+
+    // Provide troubleshooting suggestions
+    _UART1_.println(F("1. Please recheck the \"Protocol Type\" in HUSKYLENS (General Settings>>Protocol Type>>I2C)"));
+    _UART1_.println(F("2. Please recheck the connection."));
+
+    // Introduce a brief delay before retrying initialization
+    delay(1000);
+  }
+
+  if (!huskylens.isLearned())
+  {
+    _UART1_.println("Nothing learned, teach me first !");
+  }
+}
+
+// Take a huskylens result and print out the x/y coordinates and other useful properties.
+void printResult(HUSKYLENSResult result)
+{
+
+  if (result.command == COMMAND_RETURN_BLOCK)
+  {
+
+    _UART1_.println(String() + F("Block:xCenter=") + result.xCenter + F(",yCenter=") + result.yCenter + F(",width=") + result.width + F(",height=") + result.height + F(",ID=") + result.ID);
+  }
+  else if (result.command == COMMAND_RETURN_ARROW)
+  {
+
+    _UART1_.println(String() + F("Arrow:xOrigin=") + result.xOrigin + F(",yOrigin=") + result.yOrigin + F(",xTarget=") + result.xTarget + F(",yTarget=") + result.yTarget + F(",ID=") + result.ID);
+  }
+  else
+  {
+
+    _UART1_.println("Object unknown!");
+  }
+}
+
+void askHusky()
+{
+
+  // Iterate through all available Huskylens results
+  if (huskylens.available())
+  {
+
+    HUSKYLENSResult result = huskylens.read();
+
+    printResult(result);
+
+    TAG huskySaw = static_cast<TAG>(result.ID);
+
+    switch (huskySaw)
+    {
+
+    case TAG_1_Start:
+      // Serial.println(huskySaw);
+      StopTheCarThroughLens = false;
+      moveForwardatSpeed(carSpeedAlmostCmS);
+      // Serial.println(huskySaw);
+      break;
+
+    case TAG_2_Stop:
+      // Serial.println(huskySaw);
+      StopTheCarThroughLens = true;
+      stopCar();
+      break;
+
+    case TAG_3_heart:
+      // Serial.println(huskySaw);
+      displayHeart();
+      break;
+
+    case TAG_4_Smiley:
+      // Serial.println(huskySaw);
+      displaySmiley();
+      break;
+
+    case TAG_5_W5:
+
+      // Serial.println(huskySaw);
+      displayW5();
+      break;
+
+    case TAG_6_Slow_Down:
+
+      carSpeedAlmostCmS *= 0.99;
+      // Serial.println(huskySaw);
+
+      break;
+
+    case TAG_7_Speed_Up:
+
+      carSpeedAlmostCmS *= 1.01;
+
+      // Serial.println(huskySaw);
+
+      break;
+
+    case TAG_8_Turn_Left:
+
+      leftIRSensorSwitchedOnByLens = false;
+      break;
+
+    case TAG_9_Turn_Right:
+
+      rightIRSensorSwitchedOnByLens = false;
+      break;
+
+    default:
+
+      // Handle unknown command
+      // Serial.print(huskySaw);
+      break;
+    }
+  }
+  else
+  {
+
+    _UART1_.println("No block or arrow appears on the screen!");
+  }
+}
+
 // Wifi
 
 // Wifi Details
@@ -318,9 +460,6 @@ WiFiClient ProcessingClient;
 
 // Messages
 String messageCSV;
-
-// String message;
-// byte messageArr[3] = { 0, 0, 0 };
 
 // Data
 char data;
@@ -349,6 +488,26 @@ void connectionSetup()
 
   // Start the WiFiServer to listen for incoming connections on the specified port
   server.begin();
+}
+
+void connectClient()
+{
+
+  while (!ProcessingClient.connected())
+  {
+
+    // Attempt to accept an incoming client connection on the WiFi server
+    ProcessingClient = server.available();
+
+    // used for debugging purposes to indicate that the program is still attempting to establish a connection
+    _UART1_.print("-");
+
+    // This line introduces a delay of 100 milliseconds.
+    // It's a common practice to add a delay when waiting for a connection attempt to prevent
+    // excessive CPU usage and to allow other tasks to be performed during the waiting period.
+
+    delay(100);
+  }
 }
 
 // Check client connection
@@ -490,6 +649,8 @@ void sendMessage()
 }
 
 // Matrix Handling
+
+// Define Matrix
 
 ArduinoLEDMatrix matrix;
 
@@ -639,8 +800,8 @@ void keepMovingCheckingIRSensors()
 
   // Serial.println("got inside keepMovingCheckingIRSensors");
 
-  int irLeftValue = digitalRead(LeftIRSensorInput);
-  int irRightValue = digitalRead(RightIRSensorInput);
+  int irLeftValue = leftIRSensorSwitchedOnByLens ? digitalRead(LeftIRSensorInput) : LOW;
+  int irRightValue = rightIRSensorSwitchedOnByLens ? digitalRead(RightIRSensorInput) : LOW;
 
   // Move straight for debugging
   // int irLeftValue = LOW;
@@ -676,6 +837,9 @@ void keepMovingCheckingIRSensors()
 
     moveForwardatSpeed(carSpeedAlmostCmS);
   }
+
+  leftIRSensorSwitchedOnByLens = true;
+  rightIRSensorSwitchedOnByLens = true;
 
   // Serial.println("end of keepMovingCheckingIRSensors");
 }
@@ -806,139 +970,10 @@ void turnRight()
   digitalWrite(LeftMotorSwitchActive, HIGH);
 }
 
-// Arduino functions
+// decideTheCarsStatus
 
-// Initialization function executed once at the start of the program
-void setup()
+void decideTheCarsStatus()
 {
-
-  _UART1_.begin(9600); // Initialize Serial communication with a baud rate of 9600
-
-  pinMode(LeftIRSensorInput, INPUT); // Configure the left infrared sensor pin as an input
-  pinMode(RightIRSensorInput, INPUT); // Configure the right infrared sensor pin as an input
-
-  pinMode(UltrasonicTrigger, OUTPUT); // Configure the ultrasonic trigger pin as an output
-  pinMode(UltrasonicEchoDetector, INPUT); // Configure the ultrasonic echo detector pin as an input
-
-  pinMode(LeftMotorSwitch3, OUTPUT); // Configure the left motor control pin 3 as an output
-  pinMode(LeftMotorSwitch4, OUTPUT); // Configure the left motor control pin 4 as an output
-  pinMode(RightMotorSwitch1, OUTPUT); // Configure the right motor control pin 1 as an output
-  pinMode(RightMotorSwitch2, OUTPUT); // Configure the right motor control pin 2 as an output
-
-  digitalWrite(RightMotorSwitch1, LOW); // Initially set both motors to be swtiched off
-  digitalWrite(RightMotorSwitch2, LOW); // Initially set both motors to be swtiched off
-  digitalWrite(LeftMotorSwitch3, LOW); // Initially set both motors to be swtiched off
-  digitalWrite(LeftMotorSwitch4, LOW); // Initially set both motors to be swtiched off
-
-  pinMode(LeftMotorPWM, OUTPUT); // Configure the left motor PWM pin as an output
-  pinMode(RightMotorPWM, OUTPUT); // Configure the right motor PWM pin as an output
-
-  pinMode(LeftEncoder, INPUT_PULLUP); // Configure the left motor encoder pin with pull-up resistor enabled
-  pinMode(RightEncoder, INPUT_PULLUP); // Configure the right motor encoder pin with pull-up resistor enabled
-                                       // & logic inversion (a 20 k resistor in parallel for impedence control)
-
-  // Initialize the LED matrix for further use
-  matrix.begin();
-
-  // Setup Connection
-
-  _UART1_.println("Inside Setup before connection");
-
-  _UART1_.println("Setting up!");
-
-  connectionSetup();
-
-  _UART1_.println("Inside Setup afer connection");
-
-  // Interrupts
-
-  _UART1_.println("1 Inside Setup 2");
-
-  // Coding in the Interrupts
-
-  // This sets up an ISR for the RightEncoder pin.
-  // When a rising edge is detected on this pin (which typically corresponds to a notch passing by the encoder sensor),
-  // the provided lambda function is executed
-
-  attachInterrupt(
-
-      digitalPinToInterrupt(RightEncoder), []()
-      {
-      // Increment the pulse count for the right encoder
-      rightPulseCount++;
-
-      // Update the previous time to the current time
-      rightTimePrev = rightTimeCurrent;
-
-      // Update the current time
-      rightTimeCurrent = millis(); },
-
-      RISING);
-
-  // Similar to the previous block, this sets up an ISR for the LeftEncoder pin.
-  // When a rising edge is detected (indicating a notch passing by the sensor),
-  // the provided lambda function is executed.
-
-  attachInterrupt(
-
-      digitalPinToInterrupt(LeftEncoder), []()
-      {
-      // Increment the pulse count for the left encoder
-      leftPulseCount++;
-
-      // Update the previous time to the current time
-      leftTimePrev = leftTimeCurrent;
-
-      // Update the current time
-      leftTimeCurrent = millis(); },
-
-      RISING);
-
-  // These ISRs are commonly used in motor control applications to accurately
-  // measure the speed and distance traveled by a rotating wheel.
-
-  _UART1_.println(" 4 Inside Setup 3");
-
-  // This line initiates a while loop that continues until a connection is established with the client.
-  // It checks if the client is not connected.
-
-  while (!ProcessingClient.connected())
-  {
-
-    // Attempt to accept an incoming client connection on the WiFi server
-    ProcessingClient = server.available();
-
-    // used for debugging purposes to indicate that the program is still attempting to establish a connection
-    _UART1_.print("-");
-
-    // This line introduces a delay of 100 milliseconds.
-    // It's a common practice to add a delay when waiting for a connection attempt to prevent
-    // excessive CPU usage and to allow other tasks to be performed during the waiting period.
-
-    delay(100);
-  }
-
-  _UART1_.println("Connected!");
-  _UART1_.println("Connected!");
-  _UART1_.println("Connected!");
-
-  _UART1_.println("Setting up Husky Lens!");
-
-  huskyLensSetup();
-
-  _UART1_.println("Husky Lens Setup!");
-
-  _UART1_.println("Let's start loop!");
-}
-
-// Main execution loop function that runs continuously after setup
-void loop()
-{
-
-  // Delegate the primary control logic
-  // Serial.print('.');
-
-  // Serial.println("starting loop");  // Optional debugging statement
 
   if (loopCounter % 23 == 0)
   {
@@ -999,9 +1034,12 @@ void loop()
     integral_sc_2 /= 50;
     integral_f_1 /= 50;
   }
+}
 
-  // Serial.println("Is the obstacleTooClose?");  // Optional debugging statement
-  // Serial.println(obstacleTooClose);            // Optional debugging statement
+// moveITmaybe
+
+void moveITmaybe()
+{
 
   if (!obstacleTooClose && !StopTheCarThroughGUI && !StopTheCarThroughLens)
   {
@@ -1018,161 +1056,152 @@ void loop()
 
     checkPositionRelativeToObject();
   }
+}
+
+// Initialise stuff
+
+void initialiseStuff()
+{
+
+  _UART1_.begin(9600); // Initialize Serial communication with a baud rate of 9600
+
+  pinMode(LeftIRSensorInput, INPUT); // Configure the left infrared sensor pin as an input
+  pinMode(RightIRSensorInput, INPUT); // Configure the right infrared sensor pin as an input
+
+  pinMode(UltrasonicTrigger, OUTPUT); // Configure the ultrasonic trigger pin as an output
+  pinMode(UltrasonicEchoDetector, INPUT); // Configure the ultrasonic echo detector pin as an input
+
+  pinMode(LeftMotorSwitch3, OUTPUT); // Configure the left motor control pin 3 as an output
+  pinMode(LeftMotorSwitch4, OUTPUT); // Configure the left motor control pin 4 as an output
+
+  pinMode(RightMotorSwitch1, OUTPUT); // Configure the right motor control pin 1 as an output
+  pinMode(RightMotorSwitch2, OUTPUT); // Configure the right motor control pin 2 as an output
+
+  digitalWrite(RightMotorSwitch1, LOW); // Initially set both motors to be swtiched off
+  digitalWrite(RightMotorSwitch2, LOW); // Initially set both motors to be swtiched off
+
+  digitalWrite(LeftMotorSwitch3, LOW); // Initially set both motors to be swtiched off
+  digitalWrite(LeftMotorSwitch4, LOW); // Initially set both motors to be swtiched off
+
+  pinMode(LeftMotorPWM, OUTPUT); // Configure the left motor PWM pin as an output
+  pinMode(RightMotorPWM, OUTPUT); // Configure the right motor PWM pin as an output
+
+  pinMode(LeftEncoder, INPUT_PULLUP); // Configure the left motor encoder pin with pull-up resistor enabled
+  pinMode(RightEncoder, INPUT_PULLUP); // Configure the right motor encoder pin with pull-up resistor enabled
+                                       // & logic inversion (a 20 k resistor in parallel for impedence control)
+
+  // Initialize the LED matrix for further use
+  matrix.begin();
+}
+
+// Arduino functions
+
+// Initialization function executed once at the start of the program
+void setup()
+{
+
+  _UART1_.println("Starting to setup Buggy");
+
+  // initialise everything
+  initialiseStuff();
+
+  // Setup Connection
+
+  _UART1_.println("Inside Setup before  Setup!");
+
+  // Serial.println("Setting up!");
+
+  connectionSetup();
+
+  _UART1_.println("Inside Setup afer connection Setup!");
+
+  // Interrupts
+
+  // Serial.println("1 Inside Setup 2");
+
+  // Coding in the Interrupts
+
+  // This sets up an ISR for the RightEncoder pin.
+  // When a rising edge is detected on this pin (which typically corresponds to a notch passing by the encoder sensor),
+  // the provided lambda function is executed
+
+  attachInterrupt(
+
+      digitalPinToInterrupt(RightEncoder), []()
+      {
+        // Increment the pulse count for the right encoder
+        rightPulseCount++;
+
+        // Update the previous time to the current time
+        rightTimePrev = rightTimeCurrent;
+
+        // Update the current time
+        rightTimeCurrent = millis(); },
+
+      RISING);
+
+  // Similar to the previous block, this sets up an ISR for the LeftEncoder pin.
+  // When a rising edge is detected (indicating a notch passing by the sensor),
+  // the provided lambda function is executed.
+
+  attachInterrupt(
+
+      digitalPinToInterrupt(LeftEncoder), []()
+      {
+        // Increment the pulse count for the left encoder
+        leftPulseCount++;
+
+        // Update the previous time to the current time
+        leftTimePrev = leftTimeCurrent;
+
+        // Update the current time
+        leftTimeCurrent = millis(); },
+
+      RISING);
+
+  // These ISRs are commonly used in motor control applications to accurately
+  // measure the speed and distance traveled by a rotating wheel.
+
+  // Serial.println(" 4 Inside Setup 3");
+
+  // This line initiates a while loop that continues until a connection is established with the client.
+  // It checks if the client is not connected.
+
+  _UART1_.println("Starting to look for the the Client");
+
+  connectClient();
+
+  _UART1_.println("Connected to Client!");
+  _UART1_.println("Connected to Client!");
+  _UART1_.println("Connected to Client!");
+
+  _UART1_.println("Setting up Husky Lens!");
+
+  huskyLensSetup();
+
+  _UART1_.println("Husky Lens is Setup!");
+
+  _UART1_.println("Let's start loop!");
+}
+
+// Main execution loop function that runs continuously after setup
+void loop()
+{
+
+  // Delegate the primary control logic
+  // Serial.print('.');
+
+  // Serial.println("starting loop");  // Optional debugging statement
+
+  decideTheCarsStatus();
+
+  // Serial.println("Is the obstacleTooClose?");  // Optional debugging statement
+  // Serial.println(obstacleTooClose);            // Optional debugging statement
+
+  moveITmaybe();
 
   // Increment the loop counter for each iteration
   loopCounter++;
 
   // Serial.println("end of loop");
-}
-
-// HUSKY LENS
-
-HUSKYLENS huskylens;
-
-// Define an enumeration for Tags
-enum TAG
-{
-
-  TAG_0, // Nothing
-  TAG_1_Start, // Start
-  TAG_2_Stop, // Stop
-  TAG_3_heart, // heart
-  TAG_4_Smiley, // Smiley
-  TAG_5_W5, // W5
-  TAG_6_Slow_Down, // Slow Down
-  TAG_7_Speed_Up, // Speed UP
-  TAG_8_Turn_Left, // Turn Left
-  TAG_9_Turn_Right // Turn Right
-
-};
-
-// Setup Husky Lens
-
-void huskyLensSetup()
-{
-
-  // Initialize the I2C communication bus
-  Wire.begin();
-
-  // Attempt to initialize communication with the Huskylens using I2C
-  while (!huskylens.begin(Wire))
-  {
-
-    // Print a failure message to the Serial Monitor
-    _UART1_.println(F("Begin failed!"));
-
-    // Provide troubleshooting suggestions
-    _UART1_.println(F("1. Please recheck the \"Protocol Type\" in HUSKYLENS (General Settings>>Protocol Type>>I2C)"));
-    _UART1_.println(F("2. Please recheck the connection."));
-
-    // Introduce a brief delay before retrying initialization
-    delay(1000);
-  }
-
-  if (!huskylens.isLearned())
-  {
-
-    _UART1_.println("Nothing learned, teach me first !");
-  }
-}
-
-void askHusky()
-{
-
-  // Iterate through all available Huskylens results
-  if (huskylens.available())
-  {
-
-    HUSKYLENSResult result = huskylens.read();
-
-    printResult(result);
-
-    TAG huskySaw = static_cast<TAG>(result.ID);
-
-    switch (huskySaw)
-    {
-    case TAG_1_Start:
-      // Serial.println(huskySaw);
-      StopTheCarThroughLens = false;
-      moveForwardatSpeed(carSpeedAlmostCmS);
-      // Serial.println(huskySaw);
-      break;
-
-    case TAG_2_Stop:
-      // Serial.println(huskySaw);
-      StopTheCarThroughLens = true;
-      stopCar();
-      break;
-
-    case TAG_3_heart:
-      // Serial.println(huskySaw);
-      displayHeart();
-      break;
-
-    case TAG_4_Smiley:
-      // Serial.println(huskySaw);
-      displaySmiley();
-      break;
-
-    case TAG_5_W5:
-
-      // Serial.println(huskySaw);
-      displayW5();
-      break;
-
-    case TAG_6_Slow_Down:
-
-      // Serial.println(huskySaw);
-
-      break;
-
-    case TAG_7_Speed_Up:
-
-      // Serial.println(huskySaw);
-
-      break;
-
-    case TAG_8_Turn_Left:
-
-      turnLeft();
-      break;
-
-    case TAG_9_Turn_Right:
-
-      turnRight();
-      break;
-
-    default:
-
-      // Handle unknown command
-      // Serial.print(huskySaw);
-      break;
-    }
-  }
-  else
-  {
-
-    _UART1_.println("No block or arrow appears on the screen!");
-  }
-}
-
-// Take a huskylens result and print out the x/y coordinates and other useful properties.
-void printResult(HUSKYLENSResult result)
-{
-
-  if (result.command == COMMAND_RETURN_BLOCK)
-  {
-
-    _UART1_.println(String() + F("Block:xCenter=") + result.xCenter + F(",yCenter=") + result.yCenter + F(",width=") + result.width + F(",height=") + result.height + F(",ID=") + result.ID);
-  }
-  else if (result.command == COMMAND_RETURN_ARROW)
-  {
-
-    _UART1_.println(String() + F("Arrow:xOrigin=") + result.xOrigin + F(",yOrigin=") + result.yOrigin + F(",xTarget=") + result.xTarget + F(",yTarget=") + result.yTarget + F(",ID=") + result.ID);
-  }
-  else
-  {
-
-    _UART1_.println("Object unknown!");
-  }
 }
