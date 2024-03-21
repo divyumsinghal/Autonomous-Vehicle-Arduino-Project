@@ -1,5 +1,5 @@
 {
-  "additionalFiles": "..\\..\\..",
+  "additionalFiles": "",
   "builtInToolsFolders": "",
   "compiler.optimization_flags": "-Os",
   "customBuildProperties": "",
@@ -7,5 +7,5 @@
   "hardwareFolders": "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages",
   "otherLibrariesFolders": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries",
   "runtime.ide.version": "10607",
-  "sketchLocation": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code"
+  "sketchLocation": "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Testing and help\\Check_I2C_Connection"
 }

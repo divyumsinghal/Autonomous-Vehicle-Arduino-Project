@@ -2,13 +2,14 @@
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial);
+  while (!Serial)
+    ;
 
   Serial.println("Scanning I2C devices...");
-  scanI2C();
 }
 
 void loop() {
+  scanI2C();
 }
 
 void scanI2C() {

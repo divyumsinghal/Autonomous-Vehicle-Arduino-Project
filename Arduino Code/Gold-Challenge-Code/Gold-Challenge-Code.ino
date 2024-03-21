@@ -9,6 +9,9 @@
 #define displaySmileyURL 'S'
 #define displayW5URL 'W'
 
+#define Mode0URL 'A'
+#define Mode2URL 'C'
+
 // Target Speed is send as an integer in ASCII
 
 // Include the library for handling the LED matrix
@@ -50,8 +53,6 @@ const double MinSpeedCmS = 0;                   // Minimum speed CmS for the car
 const double MaxSpeedCmS = 50;                  // Maximum speed CmS for the car
 const int PWMMin = 0;                           // Minimum PWM value
 const int PWMMax = 140;                         // Maximum PWM value (capping it at 135 instead of 255)
-const int TurnSpeedOuterPulseWidth = 115;       // Turning speed for outer wheel
-const int TurnSpeedInnerPulseWidth = 30;        // Turning speed for inner wheel
 const int EncoderPulsesPerRevolution = 4;       // Encoder generates 8 pulses per revolution -> 4 rising are tracked
 const int CriticalObjectDistance = 10;          // Critical distance for detecting obstacles
 const int ObjectFollowingDistance = 20;         // A slightly larger and safer distance
@@ -71,19 +72,23 @@ double distanceTravelledByTheCarCm = 0;      // How far have the wheels spun (in
 double targetSpeedCmS = MaxSpeedCmS;         // Speed to reach in mode 2
 double leftIRSensorSwitchedOnByLens = true;  // Switch on or off IR sensors using husky lens
 double rightIRSensorSwitchedOnByLens = true;
+int TurnSpeedOuterPulseWidth = 115;  // Turning speed for outer wheel
+int TurnSpeedInnerPulseWidth = 30;   // Turning speed for inner wheel
 
 // MODES
 
 // Define an enumeration for modes
 enum Modes {
-  MODE_0_Bronze,
-  MODE_1_Object_Following,  // Object Following -> PID
-  MODE_2_Speed_Control      // Speed Control -> Slider on GUI
+
+  MODE_0_Speed_Set_by_Lens,  // Keeps moving at set speed
+  MODE_1_Object_Following,   // Object Following -> PID
+  MODE_2_Speed_Control       // Speed Control -> Slider on GUI
 
 };
 
 // Variable to store the current mode
 Modes currentMode = MODE_2_Speed_Control;
+Modes setMode = MODE_2_Speed_Control;
 
 // variables for Speed of Car
 
@@ -294,16 +299,19 @@ HUSKYLENS huskylens;
 // Define an enumeration for Tags
 enum TAG {
 
-  TAG_0,            // Nothing
-  TAG_1_Start,      // Start
-  TAG_2_Stop,       // Stop
-  TAG_3_heart,      // heart
-  TAG_4_Smiley,     // Smiley
-  TAG_5_W5,         // W5
-  TAG_6_Slow_Down,  // Slow Down
-  TAG_7_Speed_Up,   // Speed UP
-  TAG_8_Turn_Left,  // Turn Left
-  TAG_9_Turn_Right  // Turn Right
+  TAG_0,             // Nothing
+  TAG_1_Start,       // Start
+  TAG_2_Stop,        // Stop
+  TAG_3_heart,       // heart
+  TAG_4_Smiley,      // Smiley
+  TAG_5_W5,          // W5
+  TAG_6_Turn_Left,   // Turn Left
+  TAG_7_Turn_Right,  // Turn Right
+  TAG_8_Slow_Down,   // Slow Down
+  TAG_9_Speed_Up,    // Speed UP
+  TAG_10,            //
+  TAG_11,            //
+  TAG_12             //
 
 };
 
@@ -335,95 +343,123 @@ void huskyLensSetup() {
 
 // Take a huskylens result and print out the x/y coordinates and other useful properties.
 void printResult(HUSKYLENSResult result) {
-
   if (result.command == COMMAND_RETURN_BLOCK) {
-
     Serial.println(String() + F("Block:xCenter=") + result.xCenter + F(",yCenter=") + result.yCenter + F(",width=") + result.width + F(",height=") + result.height + F(",ID=") + result.ID);
   } else if (result.command == COMMAND_RETURN_ARROW) {
-
     Serial.println(String() + F("Arrow:xOrigin=") + result.xOrigin + F(",yOrigin=") + result.yOrigin + F(",xTarget=") + result.xTarget + F(",yTarget=") + result.yTarget + F(",ID=") + result.ID);
   } else {
-
     Serial.println("Object unknown!");
   }
 }
 
 void askHusky() {
 
-  // Iterate through all available Huskylens results
-  if (huskylens.available()) {
+  // First, check that we have the huskylens connected...
+  if (huskylens.request() && huskylens.isLearned() && huskylens.available()) {
 
-    HUSKYLENSResult result = huskylens.read();
+    // OK, we have some blocks to process. available() will return the number of blocks to work through.
+    // fetch them using read(), one at a time, until there are none left. Each block gets given to
+    // my printResult() function to be printed out to the serial port.
+    if (huskylens.available()) {
+      HUSKYLENSResult result = huskylens.read();
 
-    printResult(result);
+      // printResult(result);
 
-    TAG huskySaw = static_cast<TAG>(result.ID);
+      TAG huskySaw = static_cast<TAG>(result.ID);
 
-    switch (huskySaw) {
+      switch (huskySaw) {
 
-      case TAG_1_Start:
-        // Serial.println(huskySaw);
-        StopTheCarThroughLens = false;
-        moveForwardatSpeed(carSpeedAlmostCmS);
-        // Serial.println(huskySaw);
-        break;
+        case TAG_1_Start:
 
-      case TAG_2_Stop:
-        // Serial.println(huskySaw);
-        StopTheCarThroughLens = true;
-        stopCar();
-        break;
+          // Serial.println(huskySaw);
+          StopTheCarThroughLens = false;
+          // Serial.println(huskySaw);
 
-      case TAG_3_heart:
-        // Serial.println(huskySaw);
-        displayHeart();
-        break;
+          break;
 
-      case TAG_4_Smiley:
-        // Serial.println(huskySaw);
-        displaySmiley();
-        break;
+        case TAG_2_Stop:
 
-      case TAG_5_W5:
+          // Serial.println(huskySaw);
+          StopTheCarThroughLens = true;
+          stopCar();
 
-        // Serial.println(huskySaw);
-        displayW5();
-        break;
+          break;
 
-      case TAG_6_Slow_Down:
+        case TAG_3_heart:
 
-        carSpeedAlmostCmS *= 0.99;
-        // Serial.println(huskySaw);
+          // Serial.println(huskySaw);
+          displayHeart();
 
-        break;
+          break;
 
-      case TAG_7_Speed_Up:
+        case TAG_4_Smiley:
 
-        carSpeedAlmostCmS *= 1.01;
+          // Serial.println(huskySaw);
+          displaySmiley();
 
-        // Serial.println(huskySaw);
+          break;
 
-        break;
+        case TAG_5_W5:
 
-      case TAG_8_Turn_Left:
+          // Serial.println(huskySaw);
+          displayW5();
 
-        leftIRSensorSwitchedOnByLens = false;
-        break;
+          break;
 
-      case TAG_9_Turn_Right:
 
-        rightIRSensorSwitchedOnByLens = false;
-        break;
+        case TAG_6_Turn_Left:
 
-      default:
+          leftIRSensorSwitchedOnByLens = false;
 
-        // Handle unknown command
-        // Serial.print(huskySaw);
-        break;
+          TurnSpeedOuterPulseWidth = 100;
+          TurnSpeedInnerPulseWidth = 20;
+
+          break;
+
+        case TAG_7_Turn_Right:
+
+          rightIRSensorSwitchedOnByLens = false;
+
+          TurnSpeedOuterPulseWidth = 100;
+          TurnSpeedInnerPulseWidth = 20;
+
+          break;
+
+        case TAG_8_Slow_Down:
+
+          carSpeedAlmostCmS *= 0.995;
+          
+          // Serial.println(huskySaw);
+
+          break;
+
+        case TAG_9_Speed_Up:
+
+          carSpeedAlmostCmS *= 1.005;
+
+          // Serial.println(huskySaw);
+
+          break;
+
+        case TAG_10:
+
+          break;
+
+        case TAG_11:
+
+          break;
+
+        case TAG_12:
+
+          break;
+
+        default:
+
+          // Handle unknown command
+          // Serial.print(huskySaw);
+          break;
+      }
     }
-  } else {
-
-    Serial.println("No block or arrow appears on the screen!");
   }
 }
 
@@ -544,6 +580,19 @@ void checkServer() {
 
       break;
 
+    case Mode0URL:
+
+      setMode = MODE_0_Speed_Set_by_Lens;
+
+      break;
+
+    case Mode2URL:
+
+      setMode = MODE_2_Speed_Control;
+
+      break;
+
+
     default:
       // Handle speed Command
 
@@ -593,7 +642,7 @@ void sendMessage() {
     message = "Distance travelled: " + String(int(distanceTravelledByTheCar))
               + " Speed: " + String(int(    carSpeedAlmostCmS)
               + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) : " No Object")
-              + " Current mode: " + ((currentMode == MODE_1_Object_Following) ? "Mode1 \n" : "Mode2 \n");
+              + " Current mode: " + ((currentMode == MODE_1_Object_Following) ? "Mode1 \n" : "Mode2URL \n");
 
     */
 
@@ -605,7 +654,7 @@ void sendMessage() {
               + " elapsedTime: " + String(elapsedTime)
               + " Speed: " + String(int(    carSpeedAlmostCmS)
               + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) : " No Object")
-              + " Current mode: " + ((currentMode == MODE_1_Object_Following) ? "Mode1 \n" : "Mode2 \n");
+              + " Current mode: " + ((currentMode == MODE_1_Object_Following) ? "Mode1 \n" : "Mode2URL \n");
     */
 
   /*
@@ -746,9 +795,10 @@ void checkPositionRelativeToObject() {
   if (nearestObstacleDistance < Overtime) {
 
     currentMode = MODE_1_Object_Following;
+
   } else {
 
-    currentMode = MODE_2_Speed_Control;
+    currentMode = setMode;
   }
 
   // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostCmS));
@@ -776,6 +826,7 @@ void keepMovingCheckingIRSensors() {
     // If left sensor is off track, turn left
 
     turnLeft();
+
   } else if (irLeftValue == HIGH && irRightValue == LOW) {
 
     // Serial.println("Right sensor off track - turning Right");
@@ -783,6 +834,7 @@ void keepMovingCheckingIRSensors() {
     // If right sensor is off track, turn Right
 
     turnRight();
+
   } else {
 
     // Serial.println("Both sensors on track - moving forward");
@@ -794,6 +846,9 @@ void keepMovingCheckingIRSensors() {
 
   leftIRSensorSwitchedOnByLens = true;
   rightIRSensorSwitchedOnByLens = true;
+
+  TurnSpeedOuterPulseWidth = 115;
+  TurnSpeedInnerPulseWidth = 30;
 
   // Serial.println("end of keepMovingCheckingIRSensors");
 }
@@ -929,23 +984,29 @@ void decideTheCarsStatus() {
 
     checkPositionRelativeToObject();
 
+
     if (currentMode == MODE_1_Object_Following) {
 
       carSpeedAlmostCmS = PIDObjectFollowing_f_1();
 
       // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostCmS));
+
     } else if (currentMode == MODE_2_Speed_Control) {
 
       carSpeedAlmostCmS = PIDMaintainSpeed_sc_2();
 
       // Serial.println("Inside Speed PID change, changing speed to: " + String(carSpeedAlmostCmS));
     }
+
+
   } else if (loopCounter % 31 == 0) {
 
     checkServer();
+
   } else if (loopCounter % 53 == 0) {
 
-    // askHusky();
+    askHusky();
+
   } else if (loopCounter % 700 == 0) {
 
     // Serial.println("Got into the 700th loop");
@@ -984,6 +1045,7 @@ void moveITmaybe() {
     // Serial.print("MOVE BRO?");  // Optional debugging statement
 
     keepMovingCheckingIRSensors();
+
   } else if (!StopTheCarThroughGUI && !StopTheCarThroughLens)  // obstacleTooClose &&
   {
 
@@ -996,8 +1058,6 @@ void moveITmaybe() {
 // Initialise stuff
 
 void initialiseStuff() {
-
-  Serial.begin(9600);  // Initialize Serial communication with a baud rate of 9600
 
   pinMode(LeftIRSensorInput, INPUT);   // Configure the left infrared sensor pin as an input
   pinMode(RightIRSensorInput, INPUT);  // Configure the right infrared sensor pin as an input
@@ -1033,6 +1093,9 @@ void initialiseStuff() {
 // Initialization function executed once at the start of the program
 void setup() {
 
+  Serial.begin(9600);  // Initialize Serial communication with a baud rate of 9600
+
+
   Serial.println(".");
   Serial.println(".");
   Serial.println(".");
@@ -1047,13 +1110,13 @@ void setup() {
 
   // Setup Connection
 
-  Serial.println("Inside Setup before  Setup!");
+  Serial.println("Inside Setup before Connection Setup!");
 
   // Serial.println("Setting up!");
 
   connectionSetup();
 
-  Serial.println("Inside Setup afer connection Setup!");
+  Serial.println("Inside Setup afer Connection Setup! WOW!");
 
   // Interrupts
 
