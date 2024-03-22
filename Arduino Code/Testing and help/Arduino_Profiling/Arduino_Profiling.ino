@@ -1272,8 +1272,8 @@ void loopTest()
   loopCounter++;
 
   // Serial.println("end of loop");
-  
 }
+
 
 
 void loop() {

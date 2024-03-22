@@ -640,33 +640,57 @@ void sendMessageCSV() {
 
 void sendMessage() {
   /*
+
     message = "Distance travelled: " + String(int(distanceTravelledByTheCar))
+
               + " Speed: " + String(int(    carSpeedAlmostCmS)
+
               + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) : " No Object")
+
               + " Current mode: " + ((currentMode == MODE_1_Object_Following) ? "Mode1 \n" : "Mode2URL \n");
 
-    */
 
+
+    */
+# 649 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
   /*
+
     message = "Distance travelled: " + String(int((leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution))
-              + " error: " + String(Kp * error)
-              + " integral: " + String(Ki * integral)
-              + " differential: " + String(Kd * differential)
-              + " elapsedTime: " + String(elapsedTime)
-              + " Speed: " + String(int(    carSpeedAlmostCmS)
-              + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) : " No Object")
-              + " Current mode: " + ((currentMode == MODE_1_Object_Following) ? "Mode1 \n" : "Mode2URL \n");
-    */
 
+              + " error: " + String(Kp * error)
+
+              + " integral: " + String(Ki * integral)
+
+              + " differential: " + String(Kd * differential)
+
+              + " elapsedTime: " + String(elapsedTime)
+
+              + " Speed: " + String(int(    carSpeedAlmostCmS)
+
+              + ((nearestObstacleDistance != 100) ? " Object at: " + String(int(nearestObstacleDistance)) : " No Object")
+
+              + " Current mode: " + ((currentMode == MODE_1_Object_Following) ? "Mode1 \n" : "Mode2URL \n");
+
+    */
+# 660 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
   /*
+
     message[0] = int(distanceTravelledByTheCar);
+
     message[1] = int(    carSpeedAlmostCmS;
+
     message[2] = int(nearestObstacleDistance);
 
 
 
+
+
+
+
     ProcessingClient.write(message, sizeof(message));
+
     */
+# 669 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 }
 
 // Matrix Handling
