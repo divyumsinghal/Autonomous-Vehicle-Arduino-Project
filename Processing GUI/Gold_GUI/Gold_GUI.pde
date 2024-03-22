@@ -1,111 +1,94 @@
-//Speed of critical section for serial print: 2906 milliseconds/10000 loop
-// Speed of critical section for sendprocessing: 2753 milliseconds/10000 loop
-
-// Import the ControlP5, processing.net and meter libraries
 import processing.net.*;
 import controlP5.*;
 import meter.*;
 
-
-// Arduino's IP address (replace with actual IP address)
 String serverAddress = "192.168.4.1";
-
-// Declare a Client object for network communication
 Client myClient;
 
-
-// Declare ControlP5 object
 ControlP5 cp5;
+Slider slide;
+Meter speedometer;
 
-// URLs for different car commands
 char startURL = 'Z';
 char stopURL = 'X';
 char displayHeartURL = 'H';
 char displaySmileyURL = 'S';
 char displayW5URL = 'W';
+char mode0URL = 'A';
+char mode2URL = 'C';
 
-
-// booleans for switches
 boolean StopStart = false;
+boolean SwitchModes = false;
 
-
-// Message variables
 String Distance_travelled = "0";
 String SpeedTravelled = "0";
 String SpeedPWMpercent = "0";
 String ObstacleDistance = "5";
-String Mode = "2";
-
-// Slider
-Slider slide;
-
-// Meter
-Meter speedometer;
+String ModeReadFromServer = "0";
+String TagReadFromServer = "0";
+String ModeName = "Object Following";
 
 
-// Setup function called once at the beginning
-void setup()
-{
-  // Initialize client for communication with Arduino
+String[] values;
+String message = "0,0,0,0,0,0";
+
+void setup() {
   myClient = new Client(this, serverAddress, 5200);
-
-  // Set the size of the Processing window
   size(1200, 900);
-
-  // Initialize controlP5
   cp5 = new ControlP5(this);
 
-  // Positioning variables for buttons
   int buttonX = 100;
   int buttonY = 50;
   int buttonWidth = 300;
   int buttonHeight = 100;
   int buttonSpacing = 140;
 
-  // Add a switches to the GUI
-
   cp5.addToggle("StopStart")
-    .setPosition(buttonX, buttonY)
+     .setPosition(buttonX, buttonY)
+     .setSize(buttonWidth, buttonHeight)
+     .setValue(false)
+     .setMode(ControlP5.SWITCH)
+     .setColorActive(color(100, 100, 100))
+     .setCaptionLabel("OFF/ON")
+     .getCaptionLabel().setFont(createFont("Arial", 30));
+     
+  cp5.addToggle("SwitchModes")
+    .setPosition(buttonX, buttonY + buttonSpacing)
     .setSize(100, 20)
     .setValue(false)
     .setSize(buttonWidth, buttonHeight)
     .setMode(ControlP5.SWITCH)
     .setColorActive(color(100, 100, 100))
-    .setCaptionLabel("OFF/ON")
+    .setCaptionLabel("Mode0/Mode2")
     .getCaptionLabel().setFont(createFont("Arial", 30));
-
-
-
-  // Add buttons to the GUI for controlling LED matrix display
+    
   cp5.addButton("displayHeart")
-    .setPosition(buttonX, buttonY + 2 * buttonSpacing)
-    .setSize(buttonWidth, buttonHeight)
-    .setLabel("Display Heart")
-    .getCaptionLabel().setFont(createFont("Arial", 30));
+     .setPosition(buttonX, buttonY + 2 * buttonSpacing)
+     .setSize(buttonWidth, buttonHeight)
+     .setLabel("Display Heart")
+     .getCaptionLabel().setFont(createFont("Arial", 30));
 
   cp5.addButton("displaySmiley")
-    .setPosition(buttonX, buttonY + 3 * buttonSpacing)
-    .setSize(buttonWidth, buttonHeight)
-    .setLabel("Display Smiley")
-    .getCaptionLabel().setFont(createFont("Arial", 30));
+     .setPosition(buttonX, buttonY + 3 * buttonSpacing)
+     .setSize(buttonWidth, buttonHeight)
+     .setLabel("Display Smiley")
+     .getCaptionLabel().setFont(createFont("Arial", 30));
 
   cp5.addButton("displayW5")
-    .setPosition(buttonX, buttonY + 4 *  buttonSpacing)
-    .setSize(buttonWidth, buttonHeight)
-    .setLabel("Display W5")
-    .getCaptionLabel().setFont(createFont("Arial", 46));
+     .setPosition(buttonX, buttonY + 4 *  buttonSpacing)
+     .setSize(buttonWidth, buttonHeight)
+     .setLabel("Display W5")
+     .getCaptionLabel().setFont(createFont("Arial", 46));
 
-
-  // Create a slider with values from 1 to 10
   slide = cp5.addSlider("SpeedControl")
-    .setRange(1, 10)
-    .setValue(10)
-    .setPosition(buttonX - 35, buttonY + 5 * buttonSpacing)
-    .setSize(370, 50)
-    .setNumberOfTickMarks(10)
-    .setSliderMode(Slider.FIX)
-    .snapToTickMarks(true)
-    .setLabel("Speed");  // Set font directly on the slider
+              .setRange(1, 10)
+              .setValue(10)
+              .setPosition(buttonX - 35, buttonY + 5 * buttonSpacing)
+              .setSize(370, 50)
+              .setNumberOfTickMarks(10)
+              .setSliderMode(Slider.FIX)
+              .snapToTickMarks(true)
+              .setLabel("Speed");
 
   slide.getValueLabel().setFont(createFont("Arial", 50));
   slide.getCaptionLabel().setFont(createFont("Arial", 30)).align(ControlP5.CENTER, ControlP5.BOTTOM_OUTSIDE);
@@ -121,53 +104,63 @@ void setup()
   speedometer.setScaleLabels(scaleLabels);
 }
 
+void draw() {
+  background(0);
+  String valueLabel = String.valueOf((int)(slide.getValue() * 5));
+  slide.getValueLabel().setText(valueLabel);
 
-// Function to send commands to the Arduino
-void sendCommand(char command)
-{
+  readClientCSV();
 
-  // Load the URL to send the command to the Arduino
-  if (myClient != null)
+  textSize(32);
+  text("Distance travelled: " + Distance_travelled, 500, 100);
+  text("Obstacle distance: " + ((ObstacleDistance.charAt(0) == '5')? "No Object within 50 cm" : ObstacleDistance), 500, 200);
+  
+  if (ModeReadFromServer.charAt(0)== '0')
   {
-    myClient.write(command);
-    //println("Sent Command");
-    //println("Sending command: " + command);
-    //println(myClient.ip());
-  } else
+    ModeName = "Tag Controlled Speed";
+    
+  } else if  (ModeReadFromServer.charAt(0)== '1')
   {
-    println("Shut up");
-  }
+    ModeName = "Object Following";
+    
+  } else if  (ModeReadFromServer.charAt(0)== '2')
+  {
+    ModeName = "GUI Controlled Target Speed";  
+  } 
+  
+  text("Mode: " + ModeName, 500, 300);
+  text("Speed percentage of PWM Signal: " + SpeedPWMpercent, 500, 800);
+
+  speedometer.updateMeter(int(SpeedTravelled));
 }
 
-void StopStart(boolean theFlag)
-{
-  if (theFlag)
-  {
+void StopStart(boolean theFlag) {
+  if (theFlag) {
     sendCommand(startURL);
     cp5.setColorBackground(color(0, 255, 0));
-  } else
-  {
+  } else {
     sendCommand(stopURL);
     cp5.setColorBackground(color(255, 0, 0));
   }
 }
 
+void SwitchModes(boolean theFlag){
+  if (theFlag){
+    sendCommand(mode2URL);
+  } else {
+    sendCommand(mode0URL);
+  }
+}
 
-// Display a heart on the LED matrix
-public void displayHeart()
-{
+void displayHeart() {
   sendCommand(displayHeartURL);
 }
 
-// Display a smiley on the LED matrix
-public void displaySmiley()
-{
+void displaySmiley() {
   sendCommand(displaySmileyURL);
 }
 
-// Display a pattern on the LED matrix
-public void displayW5()
-{
+void displayW5() {
   sendCommand(displayW5URL);
 }
 
@@ -175,59 +168,23 @@ void SpeedControl(int speed) {
   sendCommand(char((char) ((speed - 1) + '0')));
 }
 
+void sendCommand(char command) {
+  if (myClient != null) {
+    myClient.write(command);
+  }
+}
 
-String[] values;
-String message = "0,0,0";
-
-void readClientCSV()
-{
-  // Read a line of text from the client
+void readClientCSV() {
   message = myClient.readStringUntil('\n');
-
-  if (message != null)
-  {
-    // Split the message into individual values
+  if (message != null) {
     values = split(message, ',');
-
-    if (values.length == 5)
-    {
-      // Successfully split the message into three values
-
+    if (values.length == 6) {
       Distance_travelled = values[0];
       SpeedTravelled = values[1];
       ObstacleDistance = values[2];
       SpeedPWMpercent = values[3];
-      Mode = values[4];
+      ModeReadFromServer = values[4];
+      TagReadFromServer = values[5];
     }
-  };
+  }
 }
-
-
-// Draw function runs continuously
-void draw()
-{
-  background(0);
-
-  /*
-  textSize(32);
-   text("Distance travelled: " + Distance_travelled, 500, 100);
-   text("Obstacle distance: " + Obstacle, 500, 200);
-   text("Mode: " + (Mode ? "2" : "1"), 500, 300);
-   */
-
-  String valueLabel = String.valueOf((int)(slide.getValue() * 5));
-  slide.getValueLabel().setText(valueLabel);
-
-  // Read data from the Arduino
-  readClientCSV();
-
-  textSize(32);
-  text("Distance travelled: " + Distance_travelled, 500, 100);
-  text("Obstacle distance: " + ((ObstacleDistance.charAt(0) == '5')? "No Object within 50 cm" : ObstacleDistance), 500, 200);
-  text("Mode: " + (Mode.charAt(0) == '1' ? "Object Following" : "Speed Control"), 500, 300);
-  text("Speed percentage of PWM Signal: " + SpeedPWMpercent, 500, 800);
-  // text("Speed: " + Speed, 500, 300);
-
-
-  speedometer.updateMeter(int(SpeedTravelled));
-};
