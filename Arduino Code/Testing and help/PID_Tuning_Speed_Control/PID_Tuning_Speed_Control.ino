@@ -54,34 +54,32 @@ double leftSpeedCmS = (double)(arcLengthMm / (leftTimeCurrent - leftTimePrev));
 double rightSpeedCmS = (double)(arcLengthMm / (rightTimeCurrent - rightTimePrev));
 double averageSpeedCmS = (double)((leftSpeedCmS + rightSpeedCmS) / 2);
 
-
 // PID
-
 
 // PID for Speed Control
 
 // Define PID constants
 
-double Kp_sc_2 = 0.005;       // Proportional gain
-long double Ki_sc_2 = 5e-12;  // Integral gain
-double Kd_sc_2 = 2e-12;       // Derivative gain
+double Kp_sc_2 = 0.005;      // Proportional gain
+long double Ki_sc_2 = 5e-12; // Integral gain
+double Kd_sc_2 = 2e-12;      // Derivative gain
 
 // Define variables
-double error_sc_2 = 0;          // Current error
-double previousError_sc_2 = 0;  // Error in the previous iteration
+double error_sc_2 = 0;         // Current error
+double previousError_sc_2 = 0; // Error in the previous iteration
 
-double integral_sc_2 = 0;      // Integral of the error over time
-double differential_sc_2 = 0;  // Derivative of the error
+double integral_sc_2 = 0;     // Integral of the error over time
+double differential_sc_2 = 0; // Derivative of the error
 
-double controlSignal_sc_2 = 0;  // Control signal output
+double controlSignal_sc_2 = 0; // Control signal output
 
-unsigned long currentTime_sc_2 = infinity();  // Current time
-unsigned long previousTime_sc_2 = millis();   // Time in the previous iteration
-double elapsedTime_sc_2 = 0;                  // Elapsed time since the previous iteration
-
+unsigned long currentTime_sc_2 = infinity(); // Current time
+unsigned long previousTime_sc_2 = millis();  // Time in the previous iteration
+double elapsedTime_sc_2 = 0;                 // Elapsed time since the previous iteration
 
 // Function to calculate PID for maintaining speed
-double PIDMaintainSpeed_sc_2() {
+double PIDMaintainSpeed_sc_2()
+{
 
   calculateSpeed();
 
@@ -113,7 +111,6 @@ double PIDMaintainSpeed_sc_2() {
   // Ensure the next speed is within bounds
   nextSpeed_sc_2 = constrain(nextSpeed_sc_2, MinSpeedCmS, MaxSpeedCmS);
 
-
   // Serial.println("elapsedTime_sc_2 = " + String(elapsedTime_sc_2));
   // Serial.println("targetSpeedCmS = " + String(targetSpeedCmS));
   // Serial.println("averageSpeedCmS = " + String(averageSpeedCmS));
@@ -123,7 +120,6 @@ double PIDMaintainSpeed_sc_2() {
   // Serial.println("controlSignal_sc_2: " + String(controlSignal_sc_2));
   // Serial.println("nextSpeed_sc_2: " + String(nextSpeed_sc_2) + "\n");
 
-
   return nextSpeed_sc_2;
 }
 
@@ -131,8 +127,8 @@ double PIDMaintainSpeed_sc_2() {
 
 AutoPID myPID(&carSpeedAlmostCmS, &targetSpeedCmS, &carSpeedAlmostCmS, MaxSpeedCmS, MinSpeedCmS, Kp_sc_2, Ki_sc_2, Kd_sc_2);
 
-
-void calculateSpeed() {
+void calculateSpeed()
+{
   rightTimeCurrent = (rightTimeCurrent == rightTimeCurrentPast) ? (9 * rightTimeCurrent + millis()) / 10 : rightTimeCurrent;
   leftTimeCurrent = (leftTimeCurrent == leftTimeCurrentPast) ? (9 * leftTimeCurrent + millis()) / 10 : leftTimeCurrent;
   leftTimeCurrentPast = leftTimeCurrent;
@@ -142,7 +138,8 @@ void calculateSpeed() {
   averageSpeedCmS = (double)((leftSpeedCmS + rightSpeedCmS) / 2);
 }
 
-double closestObstacleUsingSonar() {
+double closestObstacleUsingSonar()
+{
   digitalWrite(UltrasonicTrigger, LOW);
   delayMicroseconds(2);
   digitalWrite(UltrasonicTrigger, HIGH);
@@ -152,86 +149,102 @@ double closestObstacleUsingSonar() {
   return (pulseDuration > 0) ? pulseDuration * SPEED_OF_SOUND_CM_PER_MS : Overtime;
 }
 
-void checkPositionRelativeToObject() {
+void checkPositionRelativeToObject()
+{
   nearestObstacleDistance = closestObstacleUsingSonar();
-  if (nearestObstacleDistance <= CriticalObjectDistance) {
+  if (nearestObstacleDistance <= CriticalObjectDistance)
+  {
     obstacleTooClose = true;
     stopCar();
     return;
-  } else {
+  }
+  else
+  {
     obstacleTooClose = false;
   }
 }
 
-void keepMovingCheckingIRSensors() {
+void keepMovingCheckingIRSensors()
+{
   int irLeftValue = digitalRead(LeftIRSensorInput);
   int irRightValue = digitalRead(RightIRSensorInput);
-  if (irLeftValue == LOW && irRightValue == HIGH) {
+  if (irLeftValue == LOW && irRightValue == HIGH)
+  {
     turnLeft();
-  } else if (irLeftValue == HIGH && irRightValue == LOW) {
+  }
+  else if (irLeftValue == HIGH && irRightValue == LOW)
+  {
     turnRight();
-  } else {
+  }
+  else
+  {
     moveForwardatSpeed(carSpeedAlmostCmS);
   }
 }
 
 inline int mapSpeedCmSToPWM(double speed);
 
-inline int mapSpeedCmSToPWM(double speed) {
+inline int mapSpeedCmSToPWM(double speed)
+{
   int PWMValue = round(
-    map(speed,
-        MinSpeedCmS,
-        MaxSpeedCmS,
-        PWMMin,
-        PWMMax));
+      map(speed,
+          MinSpeedCmS,
+          MaxSpeedCmS,
+          PWMMin,
+          PWMMax));
   return PWMValue;
 }
 
-void moveForwardatSpeed(double speed) {
+void moveForwardatSpeed(double speed)
+{
   analogWrite(
-    RightMotorPWM,
-    mapSpeedCmSToPWM(RightWheelCoefficient * speed));
+      RightMotorPWM,
+      mapSpeedCmSToPWM(RightWheelCoefficient * speed));
   analogWrite(
-    LeftMotorPWM,
-    mapSpeedCmSToPWM(LeftWheelCoefficient * speed));
+      LeftMotorPWM,
+      mapSpeedCmSToPWM(LeftWheelCoefficient * speed));
   digitalWrite(RightMotorSwitchActive, HIGH);
   digitalWrite(LeftMotorSwitchActive, HIGH);
 }
 
-void stopCar() {
+void stopCar()
+{
   analogWrite(
-    RightMotorPWM,
-    mapSpeedCmSToPWM(0));
+      RightMotorPWM,
+      mapSpeedCmSToPWM(0));
   analogWrite(
-    LeftMotorPWM,
-    mapSpeedCmSToPWM(0));
+      LeftMotorPWM,
+      mapSpeedCmSToPWM(0));
   digitalWrite(RightMotorSwitchActive, LOW);
   digitalWrite(LeftMotorSwitchActive, LOW);
 }
 
-void turnLeft() {
+void turnLeft()
+{
   analogWrite(
-    RightMotorPWM,
-    RightWheelCoefficient * TurnSpeedOuterPulseWidth);
+      RightMotorPWM,
+      RightWheelCoefficient * TurnSpeedOuterPulseWidth);
   analogWrite(
-    LeftMotorPWM,
-    LeftWheelCoefficient * TurnSpeedInnerPulseWidth);
+      LeftMotorPWM,
+      LeftWheelCoefficient * TurnSpeedInnerPulseWidth);
   digitalWrite(RightMotorSwitchActive, HIGH);
   digitalWrite(LeftMotorSwitchActive, HIGH);
 }
 
-void turnRight() {
+void turnRight()
+{
   analogWrite(
-    RightMotorPWM,
-    RightWheelCoefficient * TurnSpeedInnerPulseWidth);
+      RightMotorPWM,
+      RightWheelCoefficient * TurnSpeedInnerPulseWidth);
   analogWrite(
-    LeftMotorPWM,
-    LeftWheelCoefficient * TurnSpeedOuterPulseWidth);
+      LeftMotorPWM,
+      LeftWheelCoefficient * TurnSpeedOuterPulseWidth);
   digitalWrite(RightMotorSwitchActive, HIGH);
   digitalWrite(LeftMotorSwitchActive, HIGH);
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
   pinMode(LeftIRSensorInput, INPUT);
   pinMode(RightIRSensorInput, INPUT);
@@ -251,42 +264,45 @@ void setup() {
   pinMode(RightEncoder, INPUT_PULLUP);
 
   attachInterrupt(
-    digitalPinToInterrupt(RightEncoder), []() {
+      digitalPinToInterrupt(RightEncoder), []()
+      {
       rightPulseCount++;
       rightTimePrev = rightTimeCurrent;
-      rightTimeCurrent = millis();
-    },
-    RISING);
+      rightTimeCurrent = millis(); },
+      RISING);
 
   attachInterrupt(
-    digitalPinToInterrupt(LeftEncoder), []() {
+      digitalPinToInterrupt(LeftEncoder), []()
+      {
       leftPulseCount++;
       leftTimePrev = leftTimeCurrent;
-      leftTimeCurrent = millis();
-    },
-    RISING);
+      leftTimeCurrent = millis(); },
+      RISING);
 
-  //if temperature is more than 20 degrees below or above setpoint, OUTPUT will be set to min or max respectively
+  // if temperature is more than 20 degrees below or above setpoint, OUTPUT will be set to min or max respectively
   myPID.setBangBang(20);
-  //set PID update interval to 4000ms
+  // set PID update interval to 4000ms
   myPID.setTimeStep(4000);
 }
 
-
-void loop() {
-  if (loopCounter % 23 == 0) {
+void loop()
+{
+  if (loopCounter % 23 == 0)
+  {
 
     checkPositionRelativeToObject();
 
     // carSpeedAlmostCmS = PIDObjectFollowing_sc_2();
 
-    myPID.run();  //call every loop, updates automatically at certain time interval
+    myPID.run(); // call every loop, updates automatically at certain time interval
   }
-  if (loopCounter % 37 == 0) {
+  if (loopCounter % 37 == 0)
+  {
 
     // autotunePID();
-
-  } else if (loopCounter % 700 == 0) {
+  }
+  else if (loopCounter % 700 == 0)
+  {
 
     Serial.print("Kp : ");
     Serial.print(Kp_sc_2);
@@ -299,9 +315,12 @@ void loop() {
 
     integral_sc_2 /= 50;
   }
-  if (!obstacleTooClose && !StopTheCarThroughGUI) {
+  if (!obstacleTooClose && !StopTheCarThroughGUI)
+  {
     keepMovingCheckingIRSensors();
-  } else if (!StopTheCarThroughGUI) {
+  }
+  else if (!StopTheCarThroughGUI)
+  {
     delayMicroseconds(3000);
     checkPositionRelativeToObject();
   }

@@ -16,7 +16,7 @@ char displaySmileyURL = 'S';
 char displayW5URL = 'W';
 char mode0URL = 'A';
 char mode2URL = 'C';
-
+S
 boolean StopStart = false;
 boolean SwitchModes = false;
 
