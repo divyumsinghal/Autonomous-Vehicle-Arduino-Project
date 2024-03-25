@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous Car Control</title>
+
+</head>
+
+<body>
+
+    <button onclick="sendCommand('Z')">Start</button>
+    <button onclick="sendCommand('X')">Stop</button>
+    <button onclick="sendCommand('A')">Mode 0</button>
+    <button onclick="sendCommand('C')">Mode 2</button>
+
+    <button onclick="sendCommand('H')">Display Heart</button>
+    <button onclick="sendCommand('S')">Display Smiley</button>
+    <button onclick="sendCommand('W')">Display W5</button>
+
+    <input type="range" min="1" max="10" value="10" id="speedControl">
+    <span id="speedLabel">Speed: 50</span>
+
+    <div id="status"></div>
+
+    <script>
+        const speedControl = document.getElementById('speedControl');
+        const speedLabel = document.getElementById('speedLabel');
+        const statusDiv = document.getElementById('status');
+
+        speedControl.addEventListener('input', function() {
+            speedLabel.textContent = `Speed: ${this.value * 5}`;
+            sendCommand(String.fromCharCode(this.value - 1));
+        });
+
+        function sendCommand(command) {
+            fetch('http://localhost:8080/command', {  // Update the URL to match your server address
+                method: 'POST',
+                body: new URLSearchParams({ 'command': command })
+            })
+            .then(response => console.log('Command sent:', command))
+            .catch(error => console.error('Error sending command:', error));
+        }
+
+        function updateStatus(message) {
+            statusDiv.innerHTML = message; // Change textContent to innerHTML
+        }
+
+        // Periodically fetch status updates from the server
+        setInterval(() => {
+            fetch('http://localhost:8080/status')  // Update the URL to match your server address
+                .then(response => response.text())
+                .then(message => updateStatus(message))
+                .catch(error => console.error('Error fetching status:', error));
+        }, 100); // Fetch status every 100 milliseconds
+
+    </script>
+</body>
+</html>

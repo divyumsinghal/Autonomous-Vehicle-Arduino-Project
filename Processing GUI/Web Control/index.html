@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous Buggy Control</title>
+</head>
+<body>
+    <button onclick="sendCommand('Z')">Start</button>
+    <button onclick="sendCommand('X')">Stop</button>
+    <button onclick="sendCommand('A')">Mode 0</button>
+    <button onclick="sendCommand('C')">Mode 2</button>
+
+    <script>
+        function sendCommand(command) {
+            fetch('/command', {
+                method: 'POST',
+                body: new URLSearchParams({ 'command': command })
+            })
+            .then(response => console.log('Command sent:', command))
+            .catch(error => console.error('Error sending command:', error));
+        }
+    </script>
+    
+</body>
+</html>
