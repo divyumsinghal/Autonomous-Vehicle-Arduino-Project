@@ -1,5 +1,6 @@
 # 1 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 // GitHub: https://github.com/divyumsinghal/Autonomous-Vehicle-Arduino-Project
+// 2753 milliseconds/10000 loop
 
 // URLs for different car commands sent from processing to arduino
 
@@ -16,13 +17,22 @@
 // Target Speed is send as an integer in ASCII
 
 // Include the library for handling the LED matrix
-# 19 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino" 2
+# 20 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino" 2
+
 
 // Include the library for WiFi communication using the S3 module
-# 22 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino" 2
-
 # 24 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino" 2
-# 25 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino" 2
+
+// Include the library for HuskyLens reading
+# 27 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino" 2
+
+// Include the library for setting up Wire
+# 30 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino" 2
+
+// #include "Talkie.h"
+// #include "Vocab_US_Large.h"
+
+// Talkie voice;
 
 // Variables
 
@@ -38,6 +48,8 @@ const int LeftMotorSwitch4 = 7; // Motor control pin 4 for the left motor
 const int UltrasonicTrigger = 5; // Digital pin for triggering the ultrasonic sensor
 const int UltrasonicEchoDetector = 4; // Digital pin for detecting the echo from the ultrasonic sensor
 const int LED_PIN = 13; // Digital pin for the LED
+const int SPEAKER_PIN = 6; // Pin for Speaker
+
 int RightMotorSwitchActive = RightMotorSwitch1; // Active Switch for right motor
 int LeftMotorSwitchActive = LeftMotorSwitch3; // Active Switch for Left motor
 
@@ -53,7 +65,7 @@ const double LeftWheelCoefficient = 1; // Coefficient for adjusting left wheel s
 const double MinSpeedCmS = 0; // Minimum speed CmS for the car
 const double MaxSpeedCmS = 50; // Maximum speed CmS for the car
 const int PWMMin = 0; // Minimum PWM value
-const int PWMMax = 140; // Maximum PWM value (capping it at 135 instead of 255)
+const int PWMMax = 160; // Maximum PWM value (capping it at 135 instead of 255)
 const int EncoderPulsesPerRevolution = 4; // Encoder generates 8 pulses per revolution -> 4 rising are tracked
 const int CriticalObjectDistance = 10; // Critical distance for detecting obstacles
 const int ObjectFollowingDistance = 20; // A slightly larger and safer distance
@@ -61,6 +73,10 @@ const int Overtime = 51; // Return this when sonar takes too long
 const double SPEED_OF_SOUND_CM_PER_MS = 0.017; // Conversion factor for microseconds to distance
 const double radiusOfWheelCm = 3.5; // radius of wheel in cm
 const double arcLengthCorrection = 0.35; // correction for speed
+const int WaitSound = 1000; // Bad Sound in Hertz
+const int GoodSound = 20; // Good Sound in Hertz
+const int DangerSound = 100000; // More Sound in Hertz
+const int Sound = 10000;
 
 // more variables
 double nearestObstacleDistance = 100; // Distance to the nearest obstacle from ultrasonic sensor
@@ -76,10 +92,15 @@ double rightIRSensorSwitchedOnByLens = true;
 int TurnSpeedOuterPulseWidth = 115; // Turning speed for outer wheel
 int TurnSpeedInnerPulseWidth = 30; // Turning speed for inner wheel
 
+// Define Matrix
+
+ArduinoLEDMatrix matrix;
+
 // MODES
 
 // Define an enumeration for modes
-enum Modes {
+enum Modes
+{
 
   MODE_0_Speed_Set_by_Lens, // Keeps moving at set speed
   MODE_1_Object_Following, // Object Following -> PID
@@ -116,7 +137,8 @@ double experimentalSpeedCmS = (double)((leftSpeedCmS + rightSpeedCmS) / 2);
 
 // Calculate the speed of the Car
 
-void calculateSpeed() {
+void calculateSpeed()
+{
 
   // Update the current time for both left and right measurements
   rightTimeCurrent = (rightTimeCurrent == rightTimeCurrentPast) ? (9 * rightTimeCurrent + millis()) / 10 : rightTimeCurrent;
@@ -187,7 +209,8 @@ double previousTime_f_1 = millis(); // Time in the previous iteration
 double elapsedTime_f_1 = 0; // Elapsed time since the previous iteration
 
 // Define function
-double PIDObjectFollowing_f_1() {
+double PIDObjectFollowing_f_1()
+{
 
   // Time
   currentTime_f_1 = millis();
@@ -249,7 +272,8 @@ unsigned long previousTime_sc_2 = millis(); // Time in the previous iteration
 double elapsedTime_sc_2 = 0; // Elapsed time since the previous iteration
 
 // Function to calculate PID for maintaining speed
-double PIDMaintainSpeed_sc_2() {
+double PIDMaintainSpeed_sc_2()
+{
 
   calculateSpeed();
 
@@ -298,7 +322,8 @@ double PIDMaintainSpeed_sc_2() {
 HUSKYLENS huskylens;
 
 // Define an enumeration for Tags
-enum TAG {
+enum TAG
+{
 
   TAG_0, // Nothing
   TAG_1_Start, // Start
@@ -309,22 +334,25 @@ enum TAG {
   TAG_6_Turn_Left, // Turn Left
   TAG_7_Turn_Right, // Turn Right
   TAG_8_Slow_Down, // Slow Down
-  TAG_9_Speed_Up, // Speed UP
-  TAG_10, //
-  TAG_11, //
-  TAG_12 //
+  buffer,
+  TAG_9_Speed_Up // Speed UP
 
 };
 
+TAG huskySaw = TAG_0;
+TAG lastTagSeen = TAG_0;
+
 // Setup Husky Lens
 
-void huskyLensSetup() {
+void huskyLensSetup()
+{
 
   // Initialize the I2C communication bus
   Wire.begin();
 
   // Attempt to initialize communication with the Huskylens using I2C
-  while (!huskylens.begin(Wire)) {
+  while (!huskylens.begin(Wire))
+  {
 
     // Print a failure message to the Serial Monitor
     _UART1_.println(F("Begin failed!"));
@@ -333,132 +361,229 @@ void huskyLensSetup() {
     _UART1_.println(F("1. Please recheck the \"Protocol Type\" in HUSKYLENS (General Settings>>Protocol Type>>I2C)"));
     _UART1_.println(F("2. Please recheck the connection."));
 
+    tone(SPEAKER_PIN, WaitSound);
+
     // Introduce a brief delay before retrying initialization
     delay(1000);
   }
 
-  if (!huskylens.isLearned()) {
+  if (!huskylens.isLearned())
+  {
     _UART1_.println("Nothing learned, teach me first !");
   }
 }
 
 // Take a huskylens result and print out the x/y coordinates and other useful properties.
-void printResult(HUSKYLENSResult result) {
-  if (result.command == COMMAND_RETURN_BLOCK) {
+void printResult(HUSKYLENSResult result)
+{
+  if (result.command == COMMAND_RETURN_BLOCK)
+  {
     _UART1_.println(String() + F("Block:xCenter=") + result.xCenter + F(",yCenter=") + result.yCenter + F(",width=") + result.width + F(",height=") + result.height + F(",ID=") + result.ID);
-  } else if (result.command == COMMAND_RETURN_ARROW) {
+  }
+  else if (result.command == COMMAND_RETURN_ARROW)
+  {
     _UART1_.println(String() + F("Arrow:xOrigin=") + result.xOrigin + F(",yOrigin=") + result.yOrigin + F(",xTarget=") + result.xTarget + F(",yTarget=") + result.yTarget + F(",ID=") + result.ID);
-  } else {
+  }
+  else
+  {
     _UART1_.println("Object unknown!");
   }
 }
 
-void askHusky() {
+void askHusky()
+{
 
   // First, check that we have the huskylens connected...
-  if (huskylens.request() && huskylens.isLearned() && huskylens.available()) {
+  if (huskylens.request() && huskylens.isLearned() && huskylens.available())
+  {
 
     // OK, we have some blocks to process. available() will return the number of blocks to work through.
     // fetch them using read(), one at a time, until there are none left. Each block gets given to
     // my printResult() function to be printed out to the serial port.
-    if (huskylens.available()) {
+    HUSKYLENSResult result = huskylens.read();
+
+    // printResult(result);
+
+    huskySaw = static_cast<TAG>(result.ID);
+
+    switch (huskySaw)
+    {
+
+      _UART1_.print("Husky lens saw a tag: ");
+      _UART1_.println(huskySaw);
+
+    case TAG_1_Start:
+
+      // Serial.println(huskySaw);
+      StopTheCarThroughLens = false;
+      // Serial.println(huskySaw);
+
+      break;
+
+    case TAG_2_Stop:
+
+      // Serial.println(huskySaw);
+      StopTheCarThroughLens = true;
+      stopCar();
+
+      break;
+
+    case TAG_3_heart:
+
+      // Serial.println(huskySaw);
+      displayHeart();
+
+      break;
+
+    case TAG_4_Smiley:
+
+      // Serial.println(huskySaw);
+      displaySmiley();
+
+      break;
+
+    case TAG_5_W5:
+
+      // Serial.println(huskySaw);
+      displayW5();
+
+      break;
+
+    case TAG_6_Turn_Left:
+
+      leftIRSensorSwitchedOnByLens = true;
+      rightIRSensorSwitchedOnByLens = false;
+
+      TurnSpeedOuterPulseWidth = 100;
+      TurnSpeedInnerPulseWidth = 20;
+
+      break;
+
+    case TAG_7_Turn_Right:
+
+      leftIRSensorSwitchedOnByLens = false;
+      rightIRSensorSwitchedOnByLens = true;
+
+      TurnSpeedOuterPulseWidth = 100;
+      TurnSpeedInnerPulseWidth = 20;
+
+      break;
+
+    case TAG_8_Slow_Down:
+
+      lastTagSeen = TAG_8_Slow_Down;
+
+      // Serial.println(huskySaw);
+
+      break;
+
+    case TAG_9_Speed_Up:
+
+      lastTagSeen = TAG_9_Speed_Up;
+
+      // Serial.println(huskySaw);
+
+      break;
+
+    default:
+
+      // Handle unknown command
+      // Serial.print(huskySaw);
+      break;
+    }
+  }
+  else
+  {
+
+    _UART1_.print("Husky lens did not see a tag: ");
+    _UART1_.println(lastTagSeen);
+
+    switch (lastTagSeen)
+    {
+    case TAG_8_Slow_Down:
+
+      lastTagSeen = TAG_0;
+      carSpeedAlmostCmS = MaxSpeedCmS / 2;
+
+      // Serial.println(huskySaw);
+
+      break;
+
+    case TAG_9_Speed_Up:
+
+      lastTagSeen = TAG_0;
+      carSpeedAlmostCmS = MaxSpeedCmS;
+
+      // Serial.println(huskySaw);
+
+      break;
+    }
+  }
+}
+
+// Define an enumeration for Faces
+enum Face
+{
+
+  No_face, // no need
+  Divyum // me
+
+};
+
+/**
+
+ * Function to perform login using HuskyLens face recognition.
+
+ * This function continuously checks for recognized faces until a valid login is achieved.
+
+ * @return void
+
+ */
+# 537 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+void huskyLensLogin()
+{
+  bool login = false; // Flag to indicate whether login is successful
+
+  // Continue attempting login until successful
+  while (!login)
+  {
+
+    tone(SPEAKER_PIN, WaitSound);
+
+    // Check if HuskyLens is ready and a face is learned and available
+    if (huskylens.request() && huskylens.isLearned() && huskylens.available())
+    {
+      // Read the result from HuskyLens
       HUSKYLENSResult result = huskylens.read();
 
-      // printResult(result);
+      // Convert the ID to a Face object
+      Face huskyFace = static_cast<Face>(result.ID); // Casting the ID from result
 
-      TAG huskySaw = static_cast<TAG>(result.ID);
+      // Check if the recognized face matches the expected user
+      if (huskyFace == Divyum)
+      {
+        // Set login flag to true
+        login = true;
 
-      switch (huskySaw) {
+        // Display welcome message and instructions
+        _UART1_.println("Welcome Divyum Singhal!");
+        _UART1_.println("Enjoy your Drive!");
+        _UART1_.println("Please follow the driving rules!");
+        _UART1_.println("Please switch the HuskyLens to tag recognition mode!");
 
-        case TAG_1_Start:
+        tone(SPEAKER_PIN, GoodSound);
+      }
+      else
+      {
+        // Notify user that the recognized face is not authorized
+        _UART1_.println("Face Not Recognised, Please go away!");
 
-          // Serial.println(huskySaw);
-          StopTheCarThroughLens = false;
-          // Serial.println(huskySaw);
+        tone(SPEAKER_PIN, DangerSound);
 
-          break;
+        matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
 
-        case TAG_2_Stop:
-
-          // Serial.println(huskySaw);
-          StopTheCarThroughLens = true;
-          stopCar();
-
-          break;
-
-        case TAG_3_heart:
-
-          // Serial.println(huskySaw);
-          displayHeart();
-
-          break;
-
-        case TAG_4_Smiley:
-
-          // Serial.println(huskySaw);
-          displaySmiley();
-
-          break;
-
-        case TAG_5_W5:
-
-          // Serial.println(huskySaw);
-          displayW5();
-
-          break;
-
-
-        case TAG_6_Turn_Left:
-
-          leftIRSensorSwitchedOnByLens = false;
-
-          TurnSpeedOuterPulseWidth = 100;
-          TurnSpeedInnerPulseWidth = 20;
-
-          break;
-
-        case TAG_7_Turn_Right:
-
-          rightIRSensorSwitchedOnByLens = false;
-
-          TurnSpeedOuterPulseWidth = 100;
-          TurnSpeedInnerPulseWidth = 20;
-
-          break;
-
-        case TAG_8_Slow_Down:
-
-          carSpeedAlmostCmS *= 0.995;
-
-          // Serial.println(huskySaw);
-
-          break;
-
-        case TAG_9_Speed_Up:
-
-          carSpeedAlmostCmS *= 1.005;
-
-          // Serial.println(huskySaw);
-
-          break;
-
-        case TAG_10:
-
-          break;
-
-        case TAG_11:
-
-          break;
-
-        case TAG_12:
-
-          break;
-
-        default:
-
-          // Handle unknown command
-          // Serial.print(huskySaw);
-          break;
+        // Delay to avoid continuous processing
+        delay(500);
       }
     }
   }
@@ -467,13 +592,17 @@ void askHusky() {
 // Wifi
 
 // Wifi Details
-char ssid[] = "w5shouldget100";
-char pass[] = "bestgroupfr123";
+// char ssid[] = "w5shouldget100";
+// char pass[] = "bestgroupfr123";
+
+char ssid[] = "giveW5fullmarks";
+char pass[] = "password123";
 
 // Declare an instance of the WiFiServer class named 'server'
 WiFiServer server(5200);
+
 // Declare a client (needs to be available globally for 2 way communication across)
-WiFiClient ProcessingClient;
+WiFiClient WebClient;
 
 // Messages
 String messageCSV;
@@ -484,14 +613,15 @@ char data;
 // WiFi Setup
 
 // Connection Setup
-void connectionSetup() {
+void connectionSetup()
+{
 
   _UART1_.println("Inside connection setup");
 
   // Initiate a connection to the WiFi network using the provided SSID and password
   WiFi.beginAP(ssid, pass);
 
-  delay(5000);
+  delay(1000);
 
   // Obtain the local IP address assigned to the Arduino on the WiFi network
   IPAddress ip = WiFi.localIP();
@@ -506,139 +636,150 @@ void connectionSetup() {
   server.begin();
 }
 
-void connectClient() {
+void connectClient()
+{
 
-  while (!ProcessingClient.connected()) {
+  while (!WebClient.connected())
+  {
 
     // Attempt to accept an incoming client connection on the WiFi server
-    ProcessingClient = server.available();
+    WebClient = server.available();
 
     // used for debugging purposes to indicate that the program is still attempting to establish a connection
     _UART1_.print("-");
+
+    tone(SPEAKER_PIN, WaitSound);
 
     // This line introduces a delay of 100 milliseconds.
     // It's a common practice to add a delay when waiting for a connection attempt to prevent
     // excessive CPU usage and to allow other tasks to be performed during the waiting period.
 
-    delay(100);
+    delay(200);
   }
+
+  tone(SPEAKER_PIN, GoodSound);
 }
 
 // Check client connection
-void checkServer() {
+void checkServer()
+{
 
   // Serial.print('_');
 
   // Send a "Hello Client" message to the connected client
   //("Hello Client");
 
-  // Serial.print("Client is connected!");
+  data = WebClient.read();
 
-  data = ProcessingClient.read();
+  //  Serial.print(data);
 
-  switch (data) {
-    case 'Z':
+  switch (data)
+  {
+  case 'Z':
 
-      // Serial.println(data);
+    // Serial.println(data);
 
-      StopTheCarThroughGUI = false;
+    StopTheCarThroughGUI = false;
 
-      // Serial.println(data);
+    // Serial.println(data);
 
-      break;
+    break;
 
-    case 'X':
+  case 'X':
 
-      // Serial.println(data);
+    // Serial.println(data);
 
-      StopTheCarThroughGUI = true;
+    StopTheCarThroughGUI = true;
 
-      stopCar();
+    stopCar();
 
-      break;
+    break;
 
-    case 'H':
+  case 'H':
 
-      // Serial.println(data);
+    // Serial.println(data);
 
-      displayHeart();
+    displayHeart();
 
-      break;
+    break;
 
-    case 'S':
+  case 'S':
 
-      // Serial.println(data);
+    // Serial.println(data);
 
-      displaySmiley();
+    displaySmiley();
 
-      break;
+    break;
 
-    case 'W':
+  case 'W':
 
-      // Serial.println(data);
+    // Serial.println(data);
 
-      displayW5();
+    displayW5();
 
-      break;
+    break;
 
-    case 'A':
+  case 'A':
 
-      setMode = MODE_0_Speed_Set_by_Lens;
+    setMode = MODE_0_Speed_Set_by_Lens;
 
-      break;
+    break;
 
-    case 'C':
+  case 'C':
 
-      setMode = MODE_2_Speed_Control;
+    setMode = MODE_2_Speed_Control;
 
-      break;
+    break;
 
+  default:
+    // Handle speed Command
 
-    default:
-      // Handle speed Command
+    // Serial.print(data);
 
-      // Serial.print(data);
+    // Check if the current mode is MODE_2_Speed_Control
+    if (currentMode == MODE_2_Speed_Control)
+    {
 
-      // Check if the current mode is MODE_2_Speed_Control
-      if (currentMode == MODE_2_Speed_Control) {
+      // Calculate the desired speed based on the received data
+      // data - '0' converts from ASCII to integer, then add 1 and multiply by 3
+      int setSpeed = (data - '0' + 1) * 5;
 
-        // Calculate the desired speed based on the received data
-        // data - '0' converts from ASCII to integer, then add 1 and multiply by 3
-        int setSpeed = (data - '0' + 1) * 5;
+      // Check if the calculated speed is within acceptable range
+      if (setSpeed > MinSpeedCmS && setSpeed <= MaxSpeedCmS)
+      {
 
-        // Check if the calculated speed is within acceptable range
-        if (setSpeed > MinSpeedCmS && setSpeed <= MaxSpeedCmS) {
+        // Update the target speed and the almost car speed with the new value
 
-          // Update the target speed and the almost car speed with the new value
+        targetSpeedCmS = setSpeed;
+        carSpeedAlmostCmS = targetSpeedCmS;
 
-          targetSpeedCmS = setSpeed;
-          carSpeedAlmostCmS = targetSpeedCmS;
-
-          // Print a message debugging the change in speed (commented out)
-          // Serial.println("Inside Mode 2, Changing speed to: " + String(targetSpeedCmS));
-        }
+        // Print a message debugging the change in speed (commented out)
+        // Serial.println("Inside Mode 2, Changing speed to: " + String(targetSpeedCmS));
       }
+    }
 
-      break;
+    break;
   }
 }
 
-void sendMessageCSV() {
+void sendMessageCSV()
+{
 
   // Construct a comma-separated value (CSV) message containing various data
   // The data includes: distance travelled by the car in centimeters, average speed in millimeters per second,
   // and distance to the nearest obstacle in some unit (possibly centimeters).
-  messageCSV = String(int(distanceTravelledByTheCarCm)) + "," + String(int(experimentalSpeedCmS)) + "," + String(int(nearestObstacleDistance)) + "," + String(int(2 * carSpeedAlmostCmS)) + "," + String(int(currentMode)) + " \n ";
+  messageCSV = String(int(distanceTravelledByTheCarCm)) + "," + String(int(experimentalSpeedCmS)) + "," + String(int(nearestObstacleDistance)) + "," + String(int(2 * carSpeedAlmostCmS)) + "," + String(int(currentMode)) + "," + String(int(huskySaw)) + " \n ";
 
   // Write the constructed CSV message to the Processing client
-  // The ProcessingClient object is assumed to have a write function that accepts a character array and its length
-  ProcessingClient.write(messageCSV.c_str(), messageCSV.length());
+  // The WebClient object is assumed to have a write function that accepts a character array and its length
+  WebClient.write(messageCSV.c_str(), messageCSV.length());
 
   // Print the constructed CSV message (commented out)
   // Serial.println(messageCSV);
 }
 
-void sendMessage() {
+void sendMessage()
+{
   /*
 
     message = "Distance travelled: " + String(int(distanceTravelledByTheCar))
@@ -652,7 +793,7 @@ void sendMessage() {
 
 
     */
-# 649 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 785 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
   /*
 
     message = "Distance travelled: " + String(int((leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution))
@@ -672,7 +813,7 @@ void sendMessage() {
               + " Current mode: " + ((currentMode == MODE_1_Object_Following) ? "Mode1 \n" : "Mode2URL \n");
 
     */
-# 660 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 796 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
   /*
 
     message[0] = int(distanceTravelledByTheCar);
@@ -687,52 +828,49 @@ void sendMessage() {
 
 
 
-    ProcessingClient.write(message, sizeof(message));
+    WebClient.write(message, sizeof(message));
 
     */
-# 669 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 805 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 }
 
 // Matrix Handling
-
-// Define Matrix
-
-ArduinoLEDMatrix matrix;
 
 // Predefined patterns for the LED matrix
 
 // Smiley pattern
 const uint32_t happy[3] = {
 
-  0x19819,
-  0x80000001,
-  0x81f8000
+    0x19819,
+    0x80000001,
+    0x81f8000
 
 };
 
 // Heart pattern
 const uint32_t heart[3] = {
 
-  0x3184a444,
-  0x44042081,
-  0x100a0040
+    0x3184a444,
+    0x44042081,
+    0x100a0040
 
 };
 
 // W5 pattern
 const uint32_t W5[4] = {
 
-  0x82f82882,
-  0x892fba1e,
-  0xe1ee1c6f,
-  66
+    0x82f82882,
+    0x892fba1e,
+    0xe1ee1c6f,
+    66
 
 };
 
 // Functions needed for Matrix
 
 // Function to display a smiley pattern on the LED matrix
-void displaySmiley() {
+void displaySmiley()
+{
 
   matrix.loadFrame(happy);
 
@@ -743,7 +881,8 @@ void displaySmiley() {
 }
 
 // Function to display a heart pattern on the LED matrix
-void displayHeart() {
+void displayHeart()
+{
 
   matrix.loadFrame(heart);
 
@@ -753,7 +892,8 @@ void displayHeart() {
 }
 
 // Function to display a W5 pattern on the LED matrix
-void displayW5() {
+void displayW5()
+{
 
   matrix.loadFrame(W5);
 
@@ -763,7 +903,8 @@ void displayW5() {
 // Sensor Functions
 
 // Function to measure the closest obstacle distance using the ultrasonic sensor
-double closestObstacleUsingSonar() {
+double closestObstacleUsingSonar()
+{
 
   // Set trigger pin low to ensure a clean pulse
   digitalWrite(UltrasonicTrigger, LOW);
@@ -790,7 +931,8 @@ double closestObstacleUsingSonar() {
 }
 
 // Checking the position relative to obstacles using the ultrasonic sensor
-void checkPositionRelativeToObject() {
+void checkPositionRelativeToObject()
+{
 
   nearestObstacleDistance = closestObstacleUsingSonar();
 
@@ -799,7 +941,8 @@ void checkPositionRelativeToObject() {
 
   // Logic for handling obstacle proximity and adjusting car speed
 
-  if (nearestObstacleDistance <= CriticalObjectDistance) {
+  if (nearestObstacleDistance <= CriticalObjectDistance)
+  {
 
     // If obstacle is too close, stop the car
     obstacleTooClose = true;
@@ -807,7 +950,9 @@ void checkPositionRelativeToObject() {
     stopCar();
 
     return;
-  } else {
+  }
+  else
+  {
 
     // If obstacle is not too close, start the car
     // or keep it moving if it is already moving
@@ -817,11 +962,13 @@ void checkPositionRelativeToObject() {
     // The PID runs after this
   }
 
-  if (nearestObstacleDistance < Overtime) {
+  if (nearestObstacleDistance < Overtime)
+  {
 
     currentMode = MODE_1_Object_Following;
-
-  } else {
+  }
+  else
+  {
 
     currentMode = setMode;
   }
@@ -830,37 +977,54 @@ void checkPositionRelativeToObject() {
 }
 
 // Keeping the car moving while checking infrared sensors for tracking
-void keepMovingCheckingIRSensors() {
+void keepMovingCheckingIRSensors()
+{
 
   // Serial.println("got inside keepMovingCheckingIRSensors");
 
-  int irLeftValue = leftIRSensorSwitchedOnByLens ? digitalRead(LeftIRSensorInput) : LOW;
-  int irRightValue = rightIRSensorSwitchedOnByLens ? digitalRead(RightIRSensorInput) : LOW;
+  int irLeftValue = digitalRead(LeftIRSensorInput);
+  int irRightValue = digitalRead(RightIRSensorInput);
 
   // Move straight for debugging
   // int irLeftValue = LOW;
   // int irRightValue = LOW;
 
-  // Serial.println(irLeftValue);
-  // Serial.println(irRightValue);
+  _UART1_.print("irLeftValue: ");
+  _UART1_.println(irLeftValue);
+  _UART1_.print("irRightValue: ");
+  _UART1_.println(irRightValue);
 
-  if (irLeftValue == LOW && irRightValue == HIGH) {
+  if (irLeftValue == LOW && irRightValue == LOW)
+  {
+    if (leftIRSensorSwitchedOnByLens)
+    {
+      turnLeft;
+    }
+    else if (rightIRSensorSwitchedOnByLens)
+    {
+      turnRight;
+    }
+  }
+  else if (irLeftValue == LOW && irRightValue == HIGH)
+  {
 
     // Serial.println("Left sensor off track - turning left");
 
     // If left sensor is off track, turn left
 
     turnLeft();
-
-  } else if (irLeftValue == HIGH && irRightValue == LOW) {
+  }
+  else if (irLeftValue == HIGH && irRightValue == LOW)
+  {
 
     // Serial.println("Right sensor off track - turning Right");
 
     // If right sensor is off track, turn Right
 
     turnRight();
-
-  } else {
+  }
+  else if (irLeftValue == HIGH && irRightValue == HIGH)
+  {
 
     // Serial.println("Both sensors on track - moving forward");
 
@@ -868,12 +1032,6 @@ void keepMovingCheckingIRSensors() {
 
     moveForwardatSpeed(carSpeedAlmostCmS);
   }
-
-  leftIRSensorSwitchedOnByLens = true;
-  rightIRSensorSwitchedOnByLens = true;
-
-  TurnSpeedOuterPulseWidth = 115;
-  TurnSpeedInnerPulseWidth = 30;
 
   // Serial.println("end of keepMovingCheckingIRSensors");
 }
@@ -883,14 +1041,15 @@ void keepMovingCheckingIRSensors() {
 inline int mapSpeedCmSToPWM(double speed);
 
 // Mapping speed to PWM values
-inline int mapSpeedCmSToPWM(double speed) {
+inline int mapSpeedCmSToPWM(double speed)
+{
 
   int PWMValue = round(
-    map(speed,
-        MinSpeedCmS,
-        MaxSpeedCmS,
-        PWMMin,
-        PWMMax));
+      map(speed,
+          MinSpeedCmS,
+          MaxSpeedCmS,
+          PWMMin,
+          PWMMax));
 
   // Serial.println("Speed: ");
   // Serial.println(speed);
@@ -901,7 +1060,8 @@ inline int mapSpeedCmSToPWM(double speed) {
 }
 
 // Function to move the car forward at a specified speed
-void moveForwardatSpeed(double speed) {
+void moveForwardatSpeed(double speed)
+{
 
   // Serial.print("Max forward at ");
   // Serial.println(MaxSpeedCmS);
@@ -911,13 +1071,13 @@ void moveForwardatSpeed(double speed) {
 
   // Adjust right motor PWM based on the specified speed
   analogWrite(
-    RightMotorPWM,
-    mapSpeedCmSToPWM(RightWheelCoefficient * speed));
+      RightMotorPWM,
+      mapSpeedCmSToPWM(RightWheelCoefficient * speed));
 
   // Adjust left motor PWM based on the left wheel coefficient
   analogWrite(
-    LeftMotorPWM,
-    mapSpeedCmSToPWM(LeftWheelCoefficient * speed));
+      LeftMotorPWM,
+      mapSpeedCmSToPWM(LeftWheelCoefficient * speed));
 
   // Switch on
   digitalWrite(RightMotorSwitchActive, HIGH);
@@ -926,19 +1086,20 @@ void moveForwardatSpeed(double speed) {
 }
 
 // Function to stop the car
-void stopCar() {
+void stopCar()
+{
 
   // Serial.println("Stopping car");
 
   // Stop the right motor by setting its PWM to 0
   analogWrite(
-    RightMotorPWM,
-    mapSpeedCmSToPWM(0));
+      RightMotorPWM,
+      mapSpeedCmSToPWM(0));
 
   // Stop the left motor by setting its PWM to 0
   analogWrite(
-    LeftMotorPWM,
-    mapSpeedCmSToPWM(0));
+      LeftMotorPWM,
+      mapSpeedCmSToPWM(0));
 
   // Switch off
 
@@ -948,7 +1109,8 @@ void stopCar() {
 }
 
 // Function to turn the car to the left
-void turnLeft() {
+void turnLeft()
+{
 
   // Serial.println("Inside turnLeft - Turning left");
 
@@ -958,13 +1120,13 @@ void turnLeft() {
   // turn at too low speeds or skids at too high
 
   analogWrite(
-    RightMotorPWM,
-    RightWheelCoefficient * TurnSpeedOuterPulseWidth);
+      RightMotorPWM,
+      RightWheelCoefficient * TurnSpeedOuterPulseWidth);
 
   // Stop the left motor
   analogWrite(
-    LeftMotorPWM,
-    LeftWheelCoefficient * TurnSpeedInnerPulseWidth);
+      LeftMotorPWM,
+      LeftWheelCoefficient * TurnSpeedInnerPulseWidth);
 
   // Switch on
 
@@ -974,7 +1136,8 @@ void turnLeft() {
 }
 
 // Function to turn the car to the right
-void turnRight() {
+void turnRight()
+{
 
   // Serial.println("Inside turnRight - Turning right");
 
@@ -984,13 +1147,13 @@ void turnRight() {
   // turn at too low speeds or skids at too high
 
   analogWrite(
-    RightMotorPWM,
-    RightWheelCoefficient * TurnSpeedInnerPulseWidth);
+      RightMotorPWM,
+      RightWheelCoefficient * TurnSpeedInnerPulseWidth);
 
   // Adjust the left motor PWM for a right turn
   analogWrite(
-    LeftMotorPWM,
-    LeftWheelCoefficient * TurnSpeedOuterPulseWidth);
+      LeftMotorPWM,
+      LeftWheelCoefficient * TurnSpeedOuterPulseWidth);
 
   // Switch on
 
@@ -1001,38 +1164,43 @@ void turnRight() {
 
 // decideTheCarsStatus
 
-void decideTheCarsStatus() {
+void decideTheCarsStatus()
+{
 
-  if (loopCounter % 23 == 0) {
+  if (loopCounter % 23 == 0)
+  {
 
     // Serial.println("Got into the 23rd loop");
 
     checkPositionRelativeToObject();
 
-
-    if (currentMode == MODE_1_Object_Following) {
+    if (currentMode == MODE_1_Object_Following)
+    {
 
       carSpeedAlmostCmS = PIDObjectFollowing_f_1();
 
       // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostCmS));
-
-    } else if (currentMode == MODE_2_Speed_Control) {
+    }
+    else if (currentMode == MODE_2_Speed_Control)
+    {
 
       carSpeedAlmostCmS = PIDMaintainSpeed_sc_2();
 
       // Serial.println("Inside Speed PID change, changing speed to: " + String(carSpeedAlmostCmS));
     }
-
-
-  } else if (loopCounter % 31 == 0) {
+  }
+  else if (loopCounter % 31 == 0)
+  {
 
     checkServer();
-
-  } else if (loopCounter % 53 == 0) {
+  }
+  else if (loopCounter % 53 == 0)
+  {
 
     askHusky();
-
-  } else if (loopCounter % 700 == 0) {
+  }
+  else if (loopCounter % 700 == 0)
+  {
 
     // Serial.println("Got into the 700th loop");
 
@@ -1062,16 +1230,18 @@ void decideTheCarsStatus() {
 
 // moveITmaybe
 
-void moveITmaybe() {
+void moveITmaybe()
+{
 
-  if (!obstacleTooClose && !StopTheCarThroughGUI && !StopTheCarThroughLens) {
+  if (!obstacleTooClose && !StopTheCarThroughGUI && !StopTheCarThroughLens)
+  {
 
     // Continue moving and checking infrared sensors if no obstacles are too close
     // Serial.print("MOVE BRO?");  // Optional debugging statement
 
     keepMovingCheckingIRSensors();
-
-  } else if (!StopTheCarThroughGUI && !StopTheCarThroughLens) // obstacleTooClose &&
+  }
+  else if (!StopTheCarThroughGUI && !StopTheCarThroughLens) // obstacleTooClose &&
   {
 
     delayMicroseconds(3000);
@@ -1082,7 +1252,8 @@ void moveITmaybe() {
 
 // Initialise stuff
 
-void initialiseStuff() {
+void initialiseStuff()
+{
 
   pinMode(LeftIRSensorInput, INPUT); // Configure the left infrared sensor pin as an input
   pinMode(RightIRSensorInput, INPUT); // Configure the right infrared sensor pin as an input
@@ -1107,7 +1278,9 @@ void initialiseStuff() {
 
   pinMode(LeftEncoder, INPUT_PULLUP); // Configure the left motor encoder pin with pull-up resistor enabled
   pinMode(RightEncoder, INPUT_PULLUP); // Configure the right motor encoder pin with pull-up resistor enabled
-                                        // & logic inversion (a 20 k resistor in parallel for impedence control)
+                                       // & logic inversion (a 20 k resistor in parallel for impedence control)
+
+  pinMode(SPEAKER_PIN, OUTPUT); // Set the speaker pin as an output
 
   // Initialize the LED matrix for further use
   matrix.begin();
@@ -1116,28 +1289,32 @@ void initialiseStuff() {
 // Arduino functions
 
 // Initialization function executed once at the start of the program
-void setup() {
+void setup()
+{
 
-  _UART1_.begin(9600); // Initialize Serial communication with a baud rate of 9600
+  _UART1_.begin(115200); // Initialize Serial communication with a baud rate of 115200
 
-
   _UART1_.println(".");
   _UART1_.println(".");
   _UART1_.println(".");
   _UART1_.println(".");
   _UART1_.println(".");
-
 
   _UART1_.println("Starting to setup Car");
 
   // initialise everything
+
   initialiseStuff();
+
+  matrix.loadFrame(LEDMATRIX_BOOTLOADER_ON);
+
+  delay(5000);
 
   // Setup Connection
 
-  _UART1_.println("Inside Setup before Connection Setup!");
+  _UART1_.println("Setting up!");
 
-  // Serial.println("Setting up!");
+  _UART1_.println("Inside Setup before Connection Setup!");
 
   connectionSetup();
 
@@ -1155,7 +1332,8 @@ void setup() {
 
   attachInterrupt(
 
-    digitalPinToInterrupt(RightEncoder), []() {
+      digitalPinToInterrupt(RightEncoder), []()
+      {
       // Increment the pulse count for the right encoder
       rightPulseCount++;
 
@@ -1163,10 +1341,9 @@ void setup() {
       rightTimePrev = rightTimeCurrent;
 
       // Update the current time
-      rightTimeCurrent = millis();
-    },
+      rightTimeCurrent = millis(); },
 
-    RISING);
+      RISING);
 
   // Similar to the previous block, this sets up an ISR for the LeftEncoder pin.
   // When a rising edge is detected (indicating a notch passing by the sensor),
@@ -1174,7 +1351,8 @@ void setup() {
 
   attachInterrupt(
 
-    digitalPinToInterrupt(LeftEncoder), []() {
+      digitalPinToInterrupt(LeftEncoder), []()
+      {
       // Increment the pulse count for the left encoder
       leftPulseCount++;
 
@@ -1182,10 +1360,9 @@ void setup() {
       leftTimePrev = leftTimeCurrent;
 
       // Update the current time
-      leftTimeCurrent = millis();
-    },
+      leftTimeCurrent = millis(); },
 
-    RISING);
+      RISING);
 
   // These ISRs are commonly used in motor control applications to accurately
   // measure the speed and distance traveled by a rotating wheel.
@@ -1194,6 +1371,13 @@ void setup() {
 
   // This line initiates a while loop that continues until a connection is established with the client.
   // It checks if the client is not connected.
+
+  // matrix.loadWrapper(LEDMATRIX_ANIMATION_WIFI_SEARCH, sizeof(LEDMATRIX_ANIMATION_WIFI_SEARCH) / sizeof(LEDMATRIX_ANIMATION_WIFI_SEARCH[0]));
+  // matrix.play(false);
+
+  matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
+
+  delay(5000);
 
   _UART1_.println("Starting to look for the the Client");
 
@@ -1209,16 +1393,35 @@ void setup() {
 
   _UART1_.println("Husky Lens is Setup!");
 
+  matrix.loadFrame(LEDMATRIX_LIKE);
+
+  delay(5000);
+
   _UART1_.println("Setup Completed!");
+
+  // matrix.endDraw();
+
+  // matrix.loadWrapper(LEDMATRIX_ANIMATION_LOCK, sizeof(LEDMATRIX_ANIMATION_LOCK) / sizeof(LEDMATRIX_ANIMATION_LOCK[0]));
+  // matrix.play();
+
+  matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
+
+  _UART1_.println("Please Login!");
+
+  huskyLensLogin();
+
+  matrix.loadFrame(LEDMATRIX_EMOJI_HAPPY);
 
   _UART1_.println("Let's start loop!");
 
   _UART1_.println("Happy Driving!");
+
+  noTone(SPEAKER_PIN); // Stop the tone
 }
 
-
 // Main execution loop function that runs continuously after setup
-void loop() {
+void loop()
+{
 
   // Delegate the primary control logic
   // Serial.print('.');

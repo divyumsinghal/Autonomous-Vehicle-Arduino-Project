@@ -16,7 +16,7 @@ char displaySmileyURL = 'S';
 char displayW5URL = 'W';
 char mode0URL = 'A';
 char mode2URL = 'C';
-S
+
 boolean StopStart = false;
 boolean SwitchModes = false;
 
@@ -44,14 +44,14 @@ void setup() {
   int buttonSpacing = 140;
 
   cp5.addToggle("StopStart")
-     .setPosition(buttonX, buttonY)
-     .setSize(buttonWidth, buttonHeight)
-     .setValue(false)
-     .setMode(ControlP5.SWITCH)
-     .setColorActive(color(100, 100, 100))
-     .setCaptionLabel("OFF/ON")
-     .getCaptionLabel().setFont(createFont("Arial", 30));
-     
+    .setPosition(buttonX, buttonY)
+    .setSize(buttonWidth, buttonHeight)
+    .setValue(false)
+    .setMode(ControlP5.SWITCH)
+    .setColorActive(color(100, 100, 100))
+    .setCaptionLabel("OFF/ON")
+    .getCaptionLabel().setFont(createFont("Arial", 30));
+
   cp5.addToggle("SwitchModes")
     .setPosition(buttonX, buttonY + buttonSpacing)
     .setSize(100, 20)
@@ -61,34 +61,34 @@ void setup() {
     .setColorActive(color(100, 100, 100))
     .setCaptionLabel("Mode0/Mode2")
     .getCaptionLabel().setFont(createFont("Arial", 30));
-    
+
   cp5.addButton("displayHeart")
-     .setPosition(buttonX, buttonY + 2 * buttonSpacing)
-     .setSize(buttonWidth, buttonHeight)
-     .setLabel("Display Heart")
-     .getCaptionLabel().setFont(createFont("Arial", 30));
+    .setPosition(buttonX, buttonY + 2 * buttonSpacing)
+    .setSize(buttonWidth, buttonHeight)
+    .setLabel("Display Heart")
+    .getCaptionLabel().setFont(createFont("Arial", 30));
 
   cp5.addButton("displaySmiley")
-     .setPosition(buttonX, buttonY + 3 * buttonSpacing)
-     .setSize(buttonWidth, buttonHeight)
-     .setLabel("Display Smiley")
-     .getCaptionLabel().setFont(createFont("Arial", 30));
+    .setPosition(buttonX, buttonY + 3 * buttonSpacing)
+    .setSize(buttonWidth, buttonHeight)
+    .setLabel("Display Smiley")
+    .getCaptionLabel().setFont(createFont("Arial", 30));
 
   cp5.addButton("displayW5")
-     .setPosition(buttonX, buttonY + 4 *  buttonSpacing)
-     .setSize(buttonWidth, buttonHeight)
-     .setLabel("Display W5")
-     .getCaptionLabel().setFont(createFont("Arial", 46));
+    .setPosition(buttonX, buttonY + 4 *  buttonSpacing)
+    .setSize(buttonWidth, buttonHeight)
+    .setLabel("Display W5")
+    .getCaptionLabel().setFont(createFont("Arial", 46));
 
   slide = cp5.addSlider("SpeedControl")
-              .setRange(1, 10)
-              .setValue(10)
-              .setPosition(buttonX - 35, buttonY + 5 * buttonSpacing)
-              .setSize(370, 50)
-              .setNumberOfTickMarks(10)
-              .setSliderMode(Slider.FIX)
-              .snapToTickMarks(true)
-              .setLabel("Speed");
+    .setRange(1, 10)
+    .setValue(10)
+    .setPosition(buttonX - 35, buttonY + 5 * buttonSpacing)
+    .setSize(370, 50)
+    .setNumberOfTickMarks(10)
+    .setSliderMode(Slider.FIX)
+    .snapToTickMarks(true)
+    .setLabel("Speed");
 
   slide.getValueLabel().setFont(createFont("Arial", 50));
   slide.getCaptionLabel().setFont(createFont("Arial", 30)).align(ControlP5.CENTER, ControlP5.BOTTOM_OUTSIDE);
@@ -114,22 +114,24 @@ void draw() {
   textSize(32);
   text("Distance travelled: " + Distance_travelled, 500, 100);
   text("Obstacle distance: " + ((ObstacleDistance.charAt(0) == '5')? "No Object within 50 cm" : ObstacleDistance), 500, 200);
-  
+
   if (ModeReadFromServer.charAt(0)== '0')
   {
     ModeName = "Tag Controlled Speed";
-    
   } else if  (ModeReadFromServer.charAt(0)== '1')
   {
     ModeName = "Object Following";
-    
   } else if  (ModeReadFromServer.charAt(0)== '2')
   {
-    ModeName = "GUI Controlled Target Speed";  
-  } 
-  
+    ModeName = "GUI Controlled Target Speed";
+  }
+
   text("Mode: " + ModeName, 500, 300);
+  
   text("Speed percentage of PWM Signal: " + SpeedPWMpercent, 500, 800);
+
+  text("Tag read: " + TagReadFromServer, 500, 850);
+
 
   speedometer.updateMeter(int(SpeedTravelled));
 }
@@ -144,8 +146,8 @@ void StopStart(boolean theFlag) {
   }
 }
 
-void SwitchModes(boolean theFlag){
-  if (theFlag){
+void SwitchModes(boolean theFlag) {
+  if (theFlag) {
     sendCommand(mode2URL);
   } else {
     sendCommand(mode0URL);

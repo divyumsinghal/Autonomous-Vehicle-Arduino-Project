@@ -1,4 +1,14 @@
-// GitHub: https://github.com/divyumsinghal/Autonomous-Vehicle-Arduino-Project
+/*
+ * @file Gold-Challenge-Code.ino
+ * @brief Arduino code for an Autonomous Vehicle project.
+ *
+ * This code controls an autonomous vehicle using an Arduino board. It includes various functionalities such as WiFi communication, LED matrix handling, obstacle detection using ultrasonic sensor, object following using PID control, and speed control. The code also includes definitions for different car commands and pin assignments for various components.
+ *
+ * GitHub Repository: [Autonomous-Vehicle-Arduino-Project](https://github.com/divyumsinghal/Autonomous-Vehicle-Arduino-Project)
+ *
+ * Author: Divyum Singhal
+ */
+
 // 2753 milliseconds/10000 loop
 
 // URLs for different car commands sent from processing to arduino
@@ -49,6 +59,15 @@ const int UltrasonicEchoDetector = 4; // Digital pin for detecting the echo from
 const int LED_PIN = 13;               // Digital pin for the LED
 const int SPEAKER_PIN = 6;            // Pin for Speaker
 
+/**
+ * @brief The active switch for the right motor.
+ *
+ * This variable holds the value of the active switch for the right motor. It is used to determine which switch is currently active for controlling the right motor. The value of this variable should be set to the appropriate switch pin number.
+ * If we need to move forward or backward, we need to set the active switch to the appropriate value.
+ *
+ * @note The value of this variable should be set to one of the predefined switch pin numbers, such as RightMotorSwitch1, RightMotorSwitch2, etc.
+ */
+
 int RightMotorSwitchActive = RightMotorSwitch1; // Active Switch for right motor
 int LeftMotorSwitchActive = LeftMotorSwitch3;   // Active Switch for Left motor
 
@@ -78,18 +97,18 @@ const int DangerSound = 100000;                // More Sound in Hertz
 const int Sound = 10000;
 
 // more variables
-double nearestObstacleDistance = 100;       // Distance to the nearest obstacle from ultrasonic sensor
-bool obstacleTooClose = false;              // Flag indicating if an obstacle is too close
-double carSpeedAlmostCmS = MaxSpeedCmS;     // Current speed of the car
-unsigned long loopCounter = 0;              // Counter for obstacle tracking frequency
-bool StopTheCarThroughGUI = true;           // Control if you want the car to move
-bool StopTheCarThroughLens = false;         // Control if you want the car to move
-double distanceTravelledByTheCarCm = 0;     // How far have the wheels spun (in cm)
-double targetSpeedCmS = MaxSpeedCmS;        // Speed to reach in mode 2
-double leftIRSensorSwitchedOnByLens = true; // Switch on or off IR sensors using husky lens
-double rightIRSensorSwitchedOnByLens = true;
-int TurnSpeedOuterPulseWidth = 115; // Turning speed for outer wheel
-int TurnSpeedInnerPulseWidth = 30;  // Turning speed for inner wheel
+double nearestObstacleDistance = 100;      // Distance to the nearest obstacle from ultrasonic sensor
+bool obstacleTooClose = false;             // Flag indicating if an obstacle is too close
+double carSpeedAlmostCmS = MaxSpeedCmS;    // Current speed of the car
+unsigned long loopCounter = 0;             // Counter for obstacle tracking frequency
+bool StopTheCarThroughGUI = true;          // Control if you want the car to move
+bool StopTheCarThroughLens = false;        // Control if you want the car to move
+double distanceTravelledByTheCarCm = 0;    // How far have the wheels spun (in cm)
+double targetSpeedCmS = MaxSpeedCmS;       // Speed to reach in mode 2
+bool leftIRSensorSwitchedOnByLens = false; // Switch on or off IR sensors using husky lens
+bool rightIRSensorSwitchedOnByLens = true; // Switch on or off IR sensors using husky lens
+int TurnSpeedOuterPulseWidth = 115;        // Turning speed for outer wheel
+int TurnSpeedInnerPulseWidth = 30;         // Turning speed for inner wheel
 
 // Define Matrix
 
@@ -208,6 +227,28 @@ double previousTime_f_1 = millis();  // Time in the previous iteration
 double elapsedTime_f_1 = 0;          // Elapsed time since the previous iteration
 
 // Define function
+/**
+ * Calculates the output of the PID controller for object following.
+ *
+ * This function implements a PID (Proportional-Integral-Derivative) controller
+ * to control the movement of an autonomous vehicle while following an object.
+ * It takes into account the current position and velocity of the vehicle, as well
+ * as the desired position and velocity of the object being followed.
+ *
+ * The PID controller uses three components to calculate the output:
+ * - Proportional (P) component: This component is proportional to the error between
+ *   the current position and the desired position. It helps steer the vehicle towards
+ *   the object being followed.
+ * - Integral (I) component: This component takes into account the cumulative error
+ *   over time. It helps eliminate steady-state errors and biases.
+ * - Derivative (D) component: This component considers the rate of change of the error.
+ *   It helps dampen the response of the controller and improve stability.
+ *
+ * The function returns the calculated output of the PID controller, which can be used
+ * to control the movement of the autonomous vehicle.
+ *
+ * @return The output of the PID controller for object following.
+ */
 double PIDObjectFollowing_f_1()
 {
 
@@ -271,6 +312,16 @@ unsigned long previousTime_sc_2 = millis();  // Time in the previous iteration
 double elapsedTime_sc_2 = 0;                 // Elapsed time since the previous iteration
 
 // Function to calculate PID for maintaining speed
+/**
+ * @brief This function implements a PID controller to maintain a desired speed.
+ *
+ * The PIDMaintainSpeed_sc_2 function calculates the control signal required to maintain a desired speed
+ * using a Proportional-Integral-Derivative (PID) controller. The function takes into account the current
+ * speed and the desired speed, and calculates the control signal based on the error between the two.
+ *
+ *
+ * @return The control signal calculated by the PID controller.
+ */
 double PIDMaintainSpeed_sc_2()
 {
 
@@ -333,17 +384,35 @@ enum TAG
   TAG_6_Turn_Left,  // Turn Left
   TAG_7_Turn_Right, // Turn Right
   TAG_8_Slow_Down,  // Slow Down
-  TAG_9,            //
-  TAG_10_Speed_Up,  // Speed UP
-  TAG_11,           //
-  TAG_12            //
+  buffer,
+  TAG_9_Speed_Up // Speed UP
 
 };
 
 TAG huskySaw = TAG_0;
+TAG lastTagSeen = TAG_0;
 
 // Setup Husky Lens
 
+/**
+ * @brief Sets up the HuskyLens module for communication with the Arduino board.
+ *
+ * This function initializes the necessary settings and configurations to establish
+ * communication between the Arduino board and the HuskyLens module. It should be called
+ * before any other functions that interact with the HuskyLens module.
+ *
+ * @details The HuskyLens module is a vision sensor that can detect and track objects
+ * using various algorithms. This function prepares the Arduino board to receive data
+ * from the HuskyLens module and control its operations.
+ *
+ * @note Make sure to connect the HuskyLens module to the appropriate pins on the Arduino
+ * board before calling this function.
+ *
+ * @see huskyLensReadData()
+ * @see huskyLensSendCommand()
+ *
+ * @return void
+ */
 void huskyLensSetup()
 {
 
@@ -390,6 +459,21 @@ void printResult(HUSKYLENSResult result)
   }
 }
 
+/**
+ * @brief Asks the Husky for input and performs a specific action based on the response.
+ *
+ * This function is responsible for interacting with the Husky and performing a specific action
+ * based on the response received. It prompts the Husky for input and then evaluates the response
+ * to determine the appropriate action to take.
+ *
+ * The logic of this function involves sending a request to the Husky for input and waiting for
+ * the response. Once the response is received, it is processed to determine the action to be taken.
+ * The specific action may vary depending on the implementation of this function.
+ *
+ * @note This function assumes that the Husky is connected and ready to receive input.
+ *
+ * @return void
+ */
 void askHusky()
 {
 
@@ -408,6 +492,9 @@ void askHusky()
 
     switch (huskySaw)
     {
+
+      // Serial.print("Husky lens saw a tag: ");
+      // Serial.println(huskySaw);
 
     case TAG_1_Start:
 
@@ -448,47 +535,31 @@ void askHusky()
 
     case TAG_6_Turn_Left:
 
-      leftIRSensorSwitchedOnByLens = false;
-
-      TurnSpeedOuterPulseWidth = 100;
-      TurnSpeedInnerPulseWidth = 20;
+      leftIRSensorSwitchedOnByLens = true;
+      rightIRSensorSwitchedOnByLens = false;
 
       break;
 
     case TAG_7_Turn_Right:
 
-      rightIRSensorSwitchedOnByLens = false;
-
-      TurnSpeedOuterPulseWidth = 100;
-      TurnSpeedInnerPulseWidth = 20;
+      leftIRSensorSwitchedOnByLens = false;
+      rightIRSensorSwitchedOnByLens = true;
 
       break;
 
     case TAG_8_Slow_Down:
 
-      carSpeedAlmostCmS--; // constrain it
+      lastTagSeen = TAG_8_Slow_Down;
 
       // Serial.println(huskySaw);
 
       break;
 
-    case TAG_10_Speed_Up:
+    case TAG_9_Speed_Up:
 
-      carSpeedAlmostCmS++; // constrain it
+      lastTagSeen = TAG_9_Speed_Up;
 
       // Serial.println(huskySaw);
-
-      break;
-
-    case TAG_9:
-
-      break;
-
-    case TAG_11:
-
-      break;
-
-    case TAG_12:
 
       break;
 
@@ -496,6 +567,34 @@ void askHusky()
 
       // Handle unknown command
       // Serial.print(huskySaw);
+      break;
+    }
+  }
+  else
+  {
+
+    // Serial.print("Husky lens did not see a tag: ");
+    // Serial.println(lastTagSeen);
+
+    switch (lastTagSeen)
+    {
+    case TAG_8_Slow_Down:
+
+      lastTagSeen = TAG_0;
+
+      carSpeedAlmostCmS = MaxSpeedCmS / 2;
+
+      // Serial.println(huskySaw);
+
+      break;
+
+    case TAG_9_Speed_Up:
+
+      lastTagSeen = TAG_0;
+      carSpeedAlmostCmS = MaxSpeedCmS;
+
+      // Serial.println(huskySaw);
+
       break;
     }
   }
@@ -567,14 +666,18 @@ void huskyLensLogin()
 // Wifi
 
 // Wifi Details
-char ssid[] = "w5shouldget100";
-char pass[] = "bestgroupfr123";
+// char ssid[] = "w5shouldget100";
+// char pass[] = "bestgroupfr123";
+
+// The following line declares a character array variable named 'ssid' and 'pass' to store the Wi-Fi network name (SSID) and password.
+char ssid[] = "giveW5fullmarks";
+char pass[] = "password123";
 
 // Declare an instance of the WiFiServer class named 'server'
 WiFiServer server(5200);
 
 // Declare a client (needs to be available globally for 2 way communication across)
-WiFiClient ProcessingClient;
+WiFiClient WebClient;
 
 // Messages
 String messageCSV;
@@ -585,6 +688,11 @@ char data;
 // WiFi Setup
 
 // Connection Setup
+/**
+ * Sets up the connection for the autonomous vehicle.
+ * This function initializes the necessary components and establishes the connection with the vehicle.
+ * It should be called once at the beginning of the program.
+ */
 void connectionSetup()
 {
 
@@ -593,7 +701,7 @@ void connectionSetup()
   // Initiate a connection to the WiFi network using the provided SSID and password
   WiFi.beginAP(ssid, pass);
 
-  delay(5000);
+  delay(1000);
 
   // Obtain the local IP address assigned to the Arduino on the WiFi network
   IPAddress ip = WiFi.localIP();
@@ -608,14 +716,25 @@ void connectionSetup()
   server.begin();
 }
 
+/**
+ * @brief Connects the client to a server.
+ *
+ * This function establishes a connection between the client and a server.
+ * It is responsible for handling the necessary steps to establish the connection,
+ * such as initializing network settings and establishing a socket connection.
+ *
+ * @note This function assumes that the necessary network settings have been properly configured.
+ *
+ * @return void
+ */
 void connectClient()
 {
 
-  while (!ProcessingClient.connected())
+  while (!WebClient.connected())
   {
 
     // Attempt to accept an incoming client connection on the WiFi server
-    ProcessingClient = server.available();
+    WebClient = server.available();
 
     // used for debugging purposes to indicate that the program is still attempting to establish a connection
     Serial.print("-");
@@ -633,6 +752,16 @@ void connectClient()
 }
 
 // Check client connection
+/**
+ * @brief Checks the server for incoming commands and performs corresponding actions.
+ *
+ * This function reads data from the WebClient and performs different actions based on the received data.
+ * If the received data matches any of the predefined URLs, the function executes the corresponding action.
+ * If the received data is a speed command and the current mode is MODE_2_Speed_Control, the function calculates
+ * the desired speed based on the received data and updates the target speed and the almost car speed.
+ *
+ * @note This function assumes that the WebClient has been initialized and is connected to a server.
+ */
 void checkServer()
 {
 
@@ -641,9 +770,9 @@ void checkServer()
   // Send a "Hello Client" message to the connected client
   //("Hello Client");
 
-  // Serial.print("Client is connected!");
+  data = WebClient.read();
 
-  data = ProcessingClient.read();
+  //  Serial.print(data);
 
   switch (data)
   {
@@ -734,6 +863,22 @@ void checkServer()
   }
 }
 
+/**
+ * Sends a message in CSV format.
+ *
+ * This function is responsible for sending a message in Comma-Separated Values (CSV) format.
+ * It performs the necessary operations to convert the message into a CSV string and sends it
+ * to the desired destination.
+ *
+ * The message includes the distance travelled by the car, car speed, nearest obstacle distance,
+ * current mode, and other relevant data.
+ *
+ * The message is constructed using the following format:
+ * "Distance travelled: <distance> Speed: <speed> Object at: <obstacle distance> Current mode: <mode>, etc"
+ *
+ * @param None
+ * @return None
+ */
 void sendMessageCSV()
 {
 
@@ -743,13 +888,18 @@ void sendMessageCSV()
   messageCSV = String(int(distanceTravelledByTheCarCm)) + "," + String(int(experimentalSpeedCmS)) + "," + String(int(nearestObstacleDistance)) + "," + String(int(2 * carSpeedAlmostCmS)) + "," + String(int(currentMode)) + "," + String(int(huskySaw)) + " \n ";
 
   // Write the constructed CSV message to the Processing client
-  // The ProcessingClient object is assumed to have a write function that accepts a character array and its length
-  ProcessingClient.write(messageCSV.c_str(), messageCSV.length());
+  // The WebClient object is assumed to have a write function that accepts a character array and its length
+  WebClient.write(messageCSV.c_str(), messageCSV.length());
 
   // Print the constructed CSV message (commented out)
   // Serial.println(messageCSV);
 }
 
+/**
+ * Sends a message.
+ * Unlike the sendMessageCSV function, this function sends a message in a different format.
+ * Unused in the current implementation.
+ */
 void sendMessage()
 {
   /*
@@ -778,7 +928,7 @@ void sendMessage()
 
 
 
-    ProcessingClient.write(message, sizeof(message));
+    WebClient.write(message, sizeof(message));
     */
 }
 
@@ -816,6 +966,11 @@ const uint32_t W5[4] = {
 
 // Functions needed for Matrix
 
+/**
+ * Displays a the above patterns on the LED matrix.
+ * The smiley face pattern is loaded onto the matrix using the loadFrame() function.
+ */
+
 // Function to display a smiley pattern on the LED matrix
 void displaySmiley()
 {
@@ -851,6 +1006,11 @@ void displayW5()
 // Sensor Functions
 
 // Function to measure the closest obstacle distance using the ultrasonic sensor
+/**
+ * Calculates the distance to the closest obstacle using sonar.
+ *
+ * @return The distance to the closest obstacle in meters.
+ */
 double closestObstacleUsingSonar()
 {
 
@@ -879,6 +1039,14 @@ double closestObstacleUsingSonar()
 }
 
 // Checking the position relative to obstacles using the ultrasonic sensor
+/**
+ * @brief Checks the position of the object relative to the current position.
+ *
+ * This function is responsible for determining the position of the object relative to the current position.
+ * It performs the necessary calculations and updates the necessary variables.
+ *
+ * @return void
+ */
 void checkPositionRelativeToObject()
 {
 
@@ -925,22 +1093,38 @@ void checkPositionRelativeToObject()
 }
 
 // Keeping the car moving while checking infrared sensors for tracking
+/**
+ * Keeps the vehicle moving while continuously checking the IR sensors.
+ * This function is responsible for maintaining the movement of the vehicle
+ * while constantly monitoring the IR sensors for any obstacles.
+ */
 void keepMovingCheckingIRSensors()
 {
 
   // Serial.println("got inside keepMovingCheckingIRSensors");
 
-  int irLeftValue = leftIRSensorSwitchedOnByLens ? digitalRead(LeftIRSensorInput) : LOW;
-  int irRightValue = rightIRSensorSwitchedOnByLens ? digitalRead(RightIRSensorInput) : LOW;
+  int irLeftValue = digitalRead(LeftIRSensorInput);
+  int irRightValue = digitalRead(RightIRSensorInput);
 
   // Move straight for debugging
   // int irLeftValue = LOW;
   // int irRightValue = LOW;
 
+  // Serial.print("irLeftValue: ");
   // Serial.println(irLeftValue);
+  // Serial.print("irRightValue: ");
   // Serial.println(irRightValue);
 
-  if (irLeftValue == LOW && irRightValue == HIGH)
+  if (irLeftValue == HIGH && irRightValue == HIGH)
+  {
+
+    // Serial.println("Both sensors on track - moving forward");
+
+    // If both sensors are on track, move forward
+
+    moveForwardatSpeed(carSpeedAlmostCmS);
+  }
+  else if (irLeftValue == LOW && irRightValue == HIGH)
   {
 
     // Serial.println("Left sensor off track - turning left");
@@ -958,21 +1142,17 @@ void keepMovingCheckingIRSensors()
 
     turnRight();
   }
-  else
+  else if (irLeftValue == LOW && irRightValue == LOW)
   {
-
-    // Serial.println("Both sensors on track - moving forward");
-
-    // If both sensors are on track, move forward
-
-    moveForwardatSpeed(carSpeedAlmostCmS);
+    if (leftIRSensorSwitchedOnByLens)
+    {
+      turnLeft();
+    }
+    else if (rightIRSensorSwitchedOnByLens)
+    {
+      turnRight();
+    }
   }
-
-  leftIRSensorSwitchedOnByLens = true;
-  rightIRSensorSwitchedOnByLens = true;
-
-  TurnSpeedOuterPulseWidth = 115;
-  TurnSpeedInnerPulseWidth = 30;
 
   // Serial.println("end of keepMovingCheckingIRSensors");
 }
@@ -982,6 +1162,12 @@ void keepMovingCheckingIRSensors()
 inline int mapSpeedCmSToPWM(double speed);
 
 // Mapping speed to PWM values
+/**
+ * Maps the given speed in centimeters per second to a corresponding PWM value.
+ *
+ * @param speed The speed in centimeters per second.
+ * @return The mapped PWM value.
+ */
 inline int mapSpeedCmSToPWM(double speed)
 {
 
@@ -1001,6 +1187,11 @@ inline int mapSpeedCmSToPWM(double speed)
 }
 
 // Function to move the car forward at a specified speed
+/**
+ * Moves the vehicle forward at the specified speed.
+ *
+ * @param speed The speed at which the vehicle should move forward.
+ */
 void moveForwardatSpeed(double speed)
 {
 
@@ -1027,6 +1218,9 @@ void moveForwardatSpeed(double speed)
 }
 
 // Function to stop the car
+/**
+ * Stops the car.
+ */
 void stopCar()
 {
 
@@ -1050,6 +1244,12 @@ void stopCar()
 }
 
 // Function to turn the car to the left
+/**
+ * Function: turnLeft
+ * ------------------
+ * This function is responsible for turning the autonomous vehicle to the left.
+ * It is used in the Arduino code for the Gold Challenge of the Autonomous Vehicle Arduino Project.
+ */
 void turnLeft()
 {
 
@@ -1077,6 +1277,12 @@ void turnLeft()
 }
 
 // Function to turn the car to the right
+/**
+ * Function: turnRight
+ * -------------------
+ * This function is responsible for turning the autonomous vehicle to the right.
+ * It is used in the Arduino code for the Gold Challenge.
+ */
 void turnRight()
 {
 
@@ -1105,6 +1311,14 @@ void turnRight()
 
 // decideTheCarsStatus
 
+/**
+ * @brief This function decides the status of the car based on the loop counter.
+ *        It performs different actions depending on the value of the loop counter.
+ *        If the loop counter is a multiple of 23, it checks the position relative to an object and adjusts the car speed accordingly.
+ *        If the loop counter is a multiple of 31, it checks the server.
+ *        If the loop counter is a multiple of 53, it asks the Husky.
+ *        If the loop counter is a multiple of 700, it calculates the distance travelled by the car, calculates the speed, sends a message in CSV format, and resets the loop counter.
+ */
 void decideTheCarsStatus()
 {
 
@@ -1171,6 +1385,19 @@ void decideTheCarsStatus()
 
 // moveITmaybe
 
+/**
+ * 
+ * This function is responsible for moving the vehicle based on certain conditions.
+ * The Conditions include:
+ * 1. If no obstacles are too close, and the vehicle is not stopped through the GUI or the lens, 
+ * it continues moving and checking the infrared sensors.
+ * 
+ * 2. If an obstacle is too close, and the vehicle is not stopped through the GUI or the lens,
+ *  the vehicle delays for a brief period and then checks the position relative to the object.
+ * 
+ * 3. If the vehicle is stopped through the GUI or the lens, it doesnt do anything.
+ * 
+ */
 void moveITmaybe()
 {
 
@@ -1193,6 +1420,14 @@ void moveITmaybe()
 
 // Initialise stuff
 
+/**
+ * @brief Initializes the necessary stuff.
+ *
+ * This function is responsible for initializing the necessary components or variables
+ * required for the program to run correctly.
+ *
+ * @return void
+ */
 void initialiseStuff()
 {
 
@@ -1230,10 +1465,17 @@ void initialiseStuff()
 // Arduino functions
 
 // Initialization function executed once at the start of the program
+/**
+ * @brief Initializes the Arduino board and sets up the necessary components and connections.
+ *
+ * This function is called once when the Arduino board is powered on or reset. It initializes the serial communication,
+ * sets up the connection with the client, configures the interrupt service routines (ISRs) for the encoders, and performs
+ * other necessary setup tasks. After the setup is completed, the Arduino is ready to execute the main loop.
+ */
 void setup()
 {
 
-  Serial.begin(9600); // Initialize Serial communication with a baud rate of 9600
+  Serial.begin(115200); // Initialize Serial communication with a baud rate of 115200
 
   Serial.println(".");
   Serial.println(".");
@@ -1253,7 +1495,7 @@ void setup()
 
   // Setup Connection
 
-  // Serial.println("Setting up!");
+  Serial.println("Setting up!");
 
   Serial.println("Inside Setup before Connection Setup!");
 
@@ -1313,9 +1555,12 @@ void setup()
   // This line initiates a while loop that continues until a connection is established with the client.
   // It checks if the client is not connected.
 
-  matrix.loadWrapper(LEDMATRIX_ANIMATION_WIFI_SEARCH, sizeof(LEDMATRIX_ANIMATION_WIFI_SEARCH) / sizeof(LEDMATRIX_ANIMATION_WIFI_SEARCH[0]));
+  // matrix.loadWrapper(LEDMATRIX_ANIMATION_WIFI_SEARCH, sizeof(LEDMATRIX_ANIMATION_WIFI_SEARCH) / sizeof(LEDMATRIX_ANIMATION_WIFI_SEARCH[0]));
+  // matrix.play(false);
 
-  matrix.play(false);
+  matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
+
+  delay(5000);
 
   Serial.println("Starting to look for the the Client");
 
@@ -1324,10 +1569,6 @@ void setup()
   Serial.println("Connected to Client!");
   Serial.println("Connected to Client!");
   Serial.println("Connected to Client!");
-
-  matrix.loadFrame(LEDMATRIX_UNO);
-
-  delay(5000);
 
   Serial.println("Setting up Husky Lens!");
 
@@ -1343,10 +1584,10 @@ void setup()
 
   // matrix.endDraw();
 
-  matrix.loadWrapper(LEDMATRIX_ANIMATION_LOCK, sizeof(LEDMATRIX_ANIMATION_LOCK) / sizeof(LEDMATRIX_ANIMATION_LOCK[0]));
-  matrix.play();
+  // matrix.loadWrapper(LEDMATRIX_ANIMATION_LOCK, sizeof(LEDMATRIX_ANIMATION_LOCK) / sizeof(LEDMATRIX_ANIMATION_LOCK[0]));
+  // matrix.play();
 
-  delay(5000);
+  matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
 
   Serial.println("Please Login!");
 
@@ -1362,9 +1603,16 @@ void setup()
 }
 
 // Main execution loop function that runs continuously after setup
+/**
+ * @brief The main loop function that runs repeatedly in the Arduino program.
+ *
+ * This function is responsible for controlling the primary logic of the program.
+ * It delegates the control to other functions, such as `decideTheCarsStatus()` and `moveITmaybe()`.
+ * It also increments the loop counter for each iteration.
+ */
+
 void loop()
 {
-
   // Delegate the primary control logic
   // Serial.print('.');
 
@@ -1382,3 +1630,4 @@ void loop()
 
   // Serial.println("end of loop");
 }
+
