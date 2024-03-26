@@ -41,7 +41,7 @@ double carSpeedAlmostCmS = MaxSpeedCmS;
 unsigned long loopCounter = 0;
 bool StopTheCarThroughGUI = false;
 double distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelCm / EncoderPulsesPerRevolution;
-double targetSpeedCmS = MaxSpeedCmS;
+double targetSpeedCmS_MODE_2_Speed_Control_PID = MaxSpeedCmS;
 
 double arcLengthMm = (double)(1000 * radiusOfWheel * 45 / 360);
 volatile unsigned long leftTimePrev = millis();

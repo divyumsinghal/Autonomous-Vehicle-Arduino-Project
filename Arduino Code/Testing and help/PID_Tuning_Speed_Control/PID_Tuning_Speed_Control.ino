@@ -41,7 +41,7 @@ double carSpeedAlmostCmS = MaxSpeedCmS;
 unsigned long loopCounter = 0;
 bool StopTheCarThroughGUI = true;
 double distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelCm / EncoderPulsesPerRevolution;
-double targetSpeedCmS = MaxSpeedCmS;
+double targetSpeedCmS_MODE_2_Speed_Control_PID = MaxSpeedCmS;
 
 double arcLengthMm = (double)(1000 * radiusOfWheel * 45 / 360);
 volatile unsigned long leftTimePrev = millis();
@@ -88,7 +88,7 @@ double PIDMaintainSpeed_sc_2()
   elapsedTime_sc_2 = (double)(currentTime_sc_2 - previousTime_sc_2);
 
   // Calculate error
-  error_sc_2 = (double)(targetSpeedCmS - averageSpeedCmS);
+  error_sc_2 = (double)(targetSpeedCmS_MODE_2_Speed_Control_PID - averageSpeedCmS);
 
   // Serial.println("Error_sc_2 = " + String(error_sc_2));
 

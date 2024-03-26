@@ -145,7 +145,7 @@ unsigned long loopCounter = 0;              // Counter for obstacle tracking fre
 bool StopTheCarThroughGUI = true;           // Control if you want the car to move
 bool StopTheCarThroughLens = false;         // Control if you want the car to move
 double distanceTravelledByTheCarCm = 0;     // How far have the wheels spun (in cm)
-double targetSpeedCmS = MaxSpeedCmS;        // Speed to reach in mode 2
+double targetSpeedCmS_MODE_2_Speed_Control_PID = MaxSpeedCmS;        // Speed to reach in mode 2
 double leftIRSensorSwitchedOnByLens = true; // Switch on or off IR sensors using husky lens
 double rightIRSensorSwitchedOnByLens = true;
 int TurnSpeedOuterPulseWidth = 115; // Turning speed for outer wheel
@@ -163,13 +163,13 @@ enum Modes
 
   MODE_0_Speed_Set_by_Lens, // Keeps moving at set speed
   MODE_1_Object_Following,  // Object Following -> PID
-  MODE_2_Speed_Control      // Speed Control -> Slider on GUI
+  MODE_2_Speed_Control_PID      // Speed Control -> Slider on GUI
 
 };
 
 // Variable to store the current mode
-Modes currentMode = MODE_2_Speed_Control;
-Modes setMode = MODE_2_Speed_Control;
+Modes currentMode = MODE_2_Speed_Control_PID;
+Modes setMode = MODE_2_Speed_Control_PID;
 
 // variables for Speed of Car
 
@@ -341,7 +341,7 @@ double PIDMaintainSpeed_sc_2()
   elapsedTime_sc_2 = (double)(currentTime_sc_2 - previousTime_sc_2);
 
   // Calculate error
-  error_sc_2 = (double)(targetSpeedCmS - experimentalSpeedCmS);
+  error_sc_2 = (double)(targetSpeedCmS_MODE_2_Speed_Control_PID - experimentalSpeedCmS);
 
   // Serial.println("Error_sc_2 = " + String(error_sc_2));
 
@@ -759,7 +759,7 @@ void checkServer()
 
   case Mode2URL:
 
-    setMode = MODE_2_Speed_Control;
+    setMode = MODE_2_Speed_Control_PID;
 
     break;
 
@@ -769,7 +769,7 @@ void checkServer()
     // Serial.print(data);
 
     // Check if the current mode is MODE_2_Speed_Control
-    if (currentMode == MODE_2_Speed_Control)
+    if (currentMode == MODE_2_Speed_Control_PID)
     {
 
       // Calculate the desired speed based on the received data
@@ -782,8 +782,8 @@ void checkServer()
 
         // Update the target speed and the almost car speed with the new value
 
-        targetSpeedCmS = setSpeed;
-        carSpeedAlmostCmS = targetSpeedCmS;
+        targetSpeedCmS_MODE_2_Speed_Control_PID = setSpeed;
+        carSpeedAlmostCmS = targetSpeedCmS_MODE_2_Speed_Control_PID;
 
         // Print a message debugging the change in speed (commented out)
         // Serial.println("Inside Mode 2, Changing speed to: " + String(targetSpeedCmS));
@@ -1182,7 +1182,7 @@ void decideTheCarsStatus()
 
       // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostCmS));
     }
-    else if (currentMode == MODE_2_Speed_Control)
+    else if (currentMode == MODE_2_Speed_Control_PID)
     {
 
       carSpeedAlmostCmS = PIDMaintainSpeed_sc_2();

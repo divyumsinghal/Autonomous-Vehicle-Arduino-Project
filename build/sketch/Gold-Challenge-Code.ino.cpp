@@ -1,7 +1,17 @@
 #include <Arduino.h>
 #line 1 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
-// GitHub: https://github.com/divyumsinghal/Autonomous-Vehicle-Arduino-Project
-// 2753 milliseconds/10000 loop
+/*
+ * @file Gold-Challenge-Code.ino
+ * @brief Arduino code for an Autonomous Vehicle project.
+ *
+ * This code controls an autonomous vehicle using an Arduino board. It includes various functionalities such as WiFi communication, LED matrix handling, obstacle detection using ultrasonic sensor, object following using PID control, and speed control. The code also includes definitions for different car commands and pin assignments for various components.
+ *
+ * GitHub Repository: [Autonomous-Vehicle-Arduino-Project](https://github.com/divyumsinghal/Autonomous-Vehicle-Arduino-Project)
+ *
+ * Author: Divyum Singhal
+ */
+
+// Current loop speed : 2753 milliseconds/10000 loop -> 0.2753 milliseconds/loop
 
 // URLs for different car commands sent from processing to arduino
 
@@ -30,10 +40,11 @@
 // Include the library for setting up Wire
 #include "SoftwareSerial.h"
 
+// Inculde the library for Talkie in order to set up the speaker
 // #include "Talkie.h"
 // #include "Vocab_US_Large.h"
-
 // Talkie voice;
+
 
 // Variables
 
@@ -50,6 +61,15 @@ const int UltrasonicTrigger = 5;      // Digital pin for triggering the ultrason
 const int UltrasonicEchoDetector = 4; // Digital pin for detecting the echo from the ultrasonic sensor
 const int LED_PIN = 13;               // Digital pin for the LED
 const int SPEAKER_PIN = 6;            // Pin for Speaker
+
+/**
+ * @brief The active switch for the right motor.
+ *
+ * This variable holds the value of the active switch for the right motor. It is used to determine which switch is currently active for controlling the right motor. The value of this variable should be set to the appropriate switch pin number.
+ * If we need to move forward or backward, we need to set the active switch to the appropriate value.
+ *
+ * @note The value of this variable should be set to one of the predefined switch pin numbers, such as RightMotorSwitch1, RightMotorSwitch2, etc.
+ */
 
 int RightMotorSwitchActive = RightMotorSwitch1; // Active Switch for right motor
 int LeftMotorSwitchActive = LeftMotorSwitch3;   // Active Switch for Left motor
@@ -80,18 +100,19 @@ const int DangerSound = 100000;                // More Sound in Hertz
 const int Sound = 10000;
 
 // more variables
-double nearestObstacleDistance = 100;       // Distance to the nearest obstacle from ultrasonic sensor
-bool obstacleTooClose = false;              // Flag indicating if an obstacle is too close
-double carSpeedAlmostCmS = MaxSpeedCmS;     // Current speed of the car
-unsigned long loopCounter = 0;              // Counter for obstacle tracking frequency
-bool StopTheCarThroughGUI = true;           // Control if you want the car to move
-bool StopTheCarThroughLens = false;         // Control if you want the car to move
-double distanceTravelledByTheCarCm = 0;     // How far have the wheels spun (in cm)
-double targetSpeedCmS = MaxSpeedCmS;        // Speed to reach in mode 2
-double leftIRSensorSwitchedOnByLens = true; // Switch on or off IR sensors using husky lens
-double rightIRSensorSwitchedOnByLens = true;
-int TurnSpeedOuterPulseWidth = 115; // Turning speed for outer wheel
-int TurnSpeedInnerPulseWidth = 30;  // Turning speed for inner wheel
+double nearestObstacleDistance = 100;                         // Distance to the nearest obstacle from ultrasonic sensor
+bool obstacleTooClose = false;                                // Flag indicating if an obstacle is too close
+double carSpeedAlmostCmS = MaxSpeedCmS;                       // Current speed of the car
+unsigned long loopCounter = 0;                                // Counter for obstacle tracking frequency
+bool StopTheCarThroughGUI = true;                             // Control if you want the car to move
+bool StopTheCarThroughLens = false;                           // Control if you want the car to move
+double distanceTravelledByTheCarCm = 0;                       // How far have the wheels spun (in cm)
+double targetSpeedCmS_MODE_2_Speed_Control_PID = MaxSpeedCmS; // Speed to reach in mode 2
+double targetSpeed_MODE_0_Speed_Set_by_Lens = MaxSpeedCmS;    // Speed to reach in mode 0
+bool leftIRSensorSwitchedOnByLens = false;                    // Switch on or off IR sensors using husky lens
+bool rightIRSensorSwitchedOnByLens = true;                    // Switch on or off IR sensors using husky lens
+int TurnSpeedOuterPulseWidth = 115;                           // Turning speed for outer wheel
+int TurnSpeedInnerPulseWidth = 30;                            // Turning speed for inner wheel
 
 // Define Matrix
 
@@ -105,17 +126,17 @@ enum Modes
 
   MODE_0_Speed_Set_by_Lens, // Keeps moving at set speed
   MODE_1_Object_Following,  // Object Following -> PID
-  MODE_2_Speed_Control      // Speed Control -> Slider on GUI
+  MODE_2_Speed_Control_PID  // Speed Control -> Slider on GUI
 
 };
 
 // Variable to store the current mode
-Modes currentMode = MODE_2_Speed_Control;
-Modes setMode = MODE_2_Speed_Control;
+Modes currentMode = MODE_0_Speed_Set_by_Lens;
+Modes setMode = MODE_0_Speed_Set_by_Lens;
 
 // variables for Speed of Car
 
-// Define arc length in millimeters based on wheel radius and angular displacement
+// Define arc length in centimeters based on wheel radius and angular displacement
 const double arcLengthCmMilli = (double)(1000 * arcLengthCorrection * 2 * 3.142 * radiusOfWheelCm / EncoderPulsesPerRevolution);
 
 // Variables to store previous and current time for left wheel and right wheel interrupts
@@ -129,70 +150,117 @@ volatile unsigned long rightTimeCurrent = infinity();
 volatile unsigned long leftTimeCurrentPast = leftTimeCurrent;
 volatile unsigned long rightTimeCurrentPast = rightTimeCurrent;
 
-// Calculate left and right wheel speeds in millimeters per second (mm/s)
-double leftSpeedCmS = (double)(arcLengthCmMilli / (leftTimeCurrent - leftTimePrev)); // mm/s
+// Calculate left and right wheel speeds in centimeters per second (cm/s)
+double leftSpeedCmS = (double)(arcLengthCmMilli / (leftTimeCurrent - leftTimePrev)); // cm/s
 double rightSpeedCmS = (double)(arcLengthCmMilli / (rightTimeCurrent - rightTimePrev));
 
-// Calculate average speed of both wheels in millimeters per second (mm/s)
+// Calculate average speed of both wheels in centimeters per second (cm/s)
 double experimentalSpeedCmS = (double)((leftSpeedCmS + rightSpeedCmS) / 2);
 
 // Calculate the speed of the Car
-
-#line 139 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+/**
+ * Calculates the speed of the left and right wheels of the autonomous vehicle.
+ * The speed is calculated in centimeters per second (cm/s) using the formula: speed = distance / time.
+ * The distance is given by 'arcLengthCmMilli' and the time is the time elapsed since the previous measurement.
+ * The function updates the current time for both left and right measurements, and keeps track of past time values.
+ * It calculates the speed of the left wheel, the speed of the right wheel, and the average speed of both wheels.
+ * The calculated speeds are stored in the variables 'leftSpeedCmS', 'rightSpeedCmS', and 'experimentalSpeedCmS' respectively.
+ */
+#line 167 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void calculateSpeed();
-#line 211 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 261 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 double PIDObjectFollowing_f_1();
-#line 274 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 334 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 double PIDMaintainSpeed_sc_2();
-#line 346 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 425 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void huskyLensSetup();
-#line 376 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 455 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void printResult(HUSKYLENSResult result);
-#line 392 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 489 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void askHusky();
-#line 537 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 630 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void huskyLensLogin();
-#line 610 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 709 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void connectionSetup();
-#line 633 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 743 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void connectClient();
-#line 658 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 778 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void checkServer();
-#line 759 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 895 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void sendMessageCSV();
-#line 775 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 916 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void sendMessage();
-#line 842 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 988 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void displaySmiley();
-#line 854 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1000 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void displayHeart();
-#line 865 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1011 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void displayW5();
-#line 876 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1027 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 double closestObstacleUsingSonar();
-#line 904 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1068 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void checkPositionRelativeToObject();
-#line 950 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1121 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void keepMovingCheckingIRSensors();
-#line 1033 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1215 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void moveForwardatSpeed(double speed);
-#line 1059 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1244 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void stopCar();
-#line 1082 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1273 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void turnLeft();
-#line 1109 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1306 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void turnRight();
-#line 1137 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1342 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void decideTheCarsStatus();
-#line 1203 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1428 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void moveITmaybe();
-#line 1225 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1458 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void initialiseStuff();
-#line 1262 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1502 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void setup();
-#line 1393 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1641 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void loop();
-#line 139 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 4 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_startURL();
+#line 15 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_stopURL();
+#line 26 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_displayHeartURL();
+#line 37 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_displaySmileyURL();
+#line 48 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_displayW5URL();
+#line 59 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_Mode0URL();
+#line 70 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_Mode2URL();
+#line 81 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_LeftIRSensorInput();
+#line 92 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_RightIRSensorInput();
+#line 103 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_RightMotorPWM();
+#line 114 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_LeftMotorPWM();
+#line 125 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_RightMotorSwitch1();
+#line 136 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_RightMotorSwitch2();
+#line 147 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_LeftMotorSwitch3();
+#line 158 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_LeftMotorSwitch4();
+#line 169 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_UltrasonicTrigger();
+#line 180 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_UltrasonicEchoDetector();
+#line 191 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_LED_PIN();
+#line 202 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+void test_SPEAKER_PIN();
+#line 212 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+int main();
+#line 167 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void calculateSpeed()
 {
 
@@ -204,16 +272,16 @@ void calculateSpeed()
   leftTimeCurrentPast = leftTimeCurrent;
   rightTimeCurrentPast = rightTimeCurrent;
 
-  // Calculate the speed of the left wheel in millimeters per second (mm/s)
+  // Calculate the speed of the left wheel in centimeters per second (cm/s)
   // using the formula: speed = distance / time
   // where distance is 'arcLengthMm' and time is the time elapsed since the previous measurement
-  leftSpeedCmS = (double)(arcLengthCmMilli / (leftTimeCurrent - leftTimePrev)); // mm/s
+  leftSpeedCmS = (double)(arcLengthCmMilli / (leftTimeCurrent - leftTimePrev)); // cm/s
 
-  // Calculate the speed of the right wheel in millimeters per second (mm/s)
+  // Calculate the speed of the right wheel in centimeters per second (cm/s)
   // using the same formula as for the left wheel
   rightSpeedCmS = (double)(arcLengthCmMilli / (rightTimeCurrent - rightTimePrev));
 
-  // Calculate the average speed of both wheels in millimeters per second (mm/s)
+  // Calculate the average speed of both wheels in centimeters per second (cm/s)
   // by taking the mean of their individual speeds
   experimentalSpeedCmS = (double)((leftSpeedCmS + rightSpeedCmS) / 2);
 
@@ -265,6 +333,28 @@ double previousTime_f_1 = millis();  // Time in the previous iteration
 double elapsedTime_f_1 = 0;          // Elapsed time since the previous iteration
 
 // Define function
+/**
+ * Calculates the output of the PID controller for object following.
+ *
+ * This function implements a PID (Proportional-Integral-Derivative) controller
+ * to control the movement of an autonomous vehicle while following an object.
+ * It takes into account the current position and velocity of the vehicle, as well
+ * as the desired position and velocity of the object being followed.
+ *
+ * The PID controller uses three components to calculate the output:
+ * - Proportional (P) component: This component is proportional to the error between
+ *   the current position and the desired position. It helps steer the vehicle towards
+ *   the object being followed.
+ * - Integral (I) component: This component takes into account the cumulative error
+ *   over time. It helps eliminate steady-state errors and biases.
+ * - Derivative (D) component: This component considers the rate of change of the error.
+ *   It helps dampen the response of the controller and improve stability.
+ *
+ * The function returns the calculated output of the PID controller, which can be used
+ * to control the movement of the autonomous vehicle.
+ *
+ * @return The output of the PID controller for object following. ( The next speed calculated by the PID controller.)
+ */
 double PIDObjectFollowing_f_1()
 {
 
@@ -328,6 +418,16 @@ unsigned long previousTime_sc_2 = millis();  // Time in the previous iteration
 double elapsedTime_sc_2 = 0;                 // Elapsed time since the previous iteration
 
 // Function to calculate PID for maintaining speed
+/**
+ * @brief This function implements a PID controller to maintain a desired speed.
+ *
+ * The PIDMaintainSpeed_sc_2 function calculates the control signal required to maintain a desired speed
+ * using a Proportional-Integral-Derivative (PID) controller. The function takes into account the current
+ * speed and the desired speed, and calculates the control signal based on the error between the two.
+ *
+ *
+ * @return The next speed calculated by the PID controller.
+ */
 double PIDMaintainSpeed_sc_2()
 {
 
@@ -338,7 +438,7 @@ double PIDMaintainSpeed_sc_2()
   elapsedTime_sc_2 = (double)(currentTime_sc_2 - previousTime_sc_2);
 
   // Calculate error
-  error_sc_2 = (double)(targetSpeedCmS - experimentalSpeedCmS);
+  error_sc_2 = (double)(targetSpeedCmS_MODE_2_Speed_Control_PID - experimentalSpeedCmS);
 
   // Serial.println("Error_sc_2 = " + String(error_sc_2));
 
@@ -400,6 +500,25 @@ TAG lastTagSeen = TAG_0;
 
 // Setup Husky Lens
 
+/**
+ * @brief Sets up the HuskyLens module for communication with the Arduino board.
+ *
+ * This function initializes the necessary settings and configurations to establish
+ * communication between the Arduino board and the HuskyLens module. It should be called
+ * before any other functions that interact with the HuskyLens module.
+ *
+ * @details The HuskyLens module is a vision sensor that can detect and track objects
+ * using various algorithms. This function prepares the Arduino board to receive data
+ * from the HuskyLens module and control its operations.
+ *
+ * @note Make sure to connect the HuskyLens module to the appropriate pins on the Arduino
+ * board before calling this function.
+ *
+ * @see huskyLensReadData()
+ * @see huskyLensSendCommand()
+ *
+ * @return void
+ */
 void huskyLensSetup()
 {
 
@@ -446,6 +565,24 @@ void printResult(HUSKYLENSResult result)
   }
 }
 
+/**
+ * @brief Asks the Husky for input and performs a specific action based on the response.
+ *
+ * This function is responsible for interacting with the Husky and performing a specific action
+ * based on the response received. It prompts the Husky for input and then evaluates the response
+ * to determine the appropriate action to take.
+ *
+ * The logic of this function involves sending a request to the Husky for input and waiting for
+ * the response. Once the response is received, it is processed to determine the action to be taken.
+ * The specific action may vary depending on the implementation of this function.
+ * 
+ * It uses a switch-case statement to handle different scenarios based on the response received.
+ * The response is typically a tag or an object recognized by the Husky, which is then used to control the vehicle.
+ *
+ * @note This function assumes that the Husky is connected and ready to receive input.
+ *
+ * @return void
+ */
 void askHusky()
 {
 
@@ -465,8 +602,8 @@ void askHusky()
     switch (huskySaw)
     {
 
-      Serial.print("Husky lens saw a tag: ");
-      Serial.println(huskySaw);
+      // Serial.print("Husky lens saw a tag: ");
+      // Serial.println(huskySaw);
 
     case TAG_1_Start:
 
@@ -510,18 +647,12 @@ void askHusky()
       leftIRSensorSwitchedOnByLens = true;
       rightIRSensorSwitchedOnByLens = false;
 
-      TurnSpeedOuterPulseWidth = 100;
-      TurnSpeedInnerPulseWidth = 20;
-
       break;
 
     case TAG_7_Turn_Right:
 
       leftIRSensorSwitchedOnByLens = false;
       rightIRSensorSwitchedOnByLens = true;
-
-      TurnSpeedOuterPulseWidth = 100;
-      TurnSpeedInnerPulseWidth = 20;
 
       break;
 
@@ -551,15 +682,16 @@ void askHusky()
   else
   {
 
-    Serial.print("Husky lens did not see a tag: ");
-    Serial.println(lastTagSeen);
+    // Serial.print("Husky lens did not see a tag: ");
+    // Serial.println(lastTagSeen);
 
     switch (lastTagSeen)
     {
     case TAG_8_Slow_Down:
 
       lastTagSeen = TAG_0;
-      carSpeedAlmostCmS = MaxSpeedCmS / 2;
+
+      targetSpeed_MODE_0_Speed_Set_by_Lens = MaxSpeedCmS / 2;
 
       // Serial.println(huskySaw);
 
@@ -568,7 +700,8 @@ void askHusky()
     case TAG_9_Speed_Up:
 
       lastTagSeen = TAG_0;
-      carSpeedAlmostCmS = MaxSpeedCmS;
+
+      targetSpeed_MODE_0_Speed_Set_by_Lens = MaxSpeedCmS;
 
       // Serial.println(huskySaw);
 
@@ -646,6 +779,7 @@ void huskyLensLogin()
 // char ssid[] = "w5shouldget100";
 // char pass[] = "bestgroupfr123";
 
+// The following line declares a character array variable named 'ssid' and 'pass' to store the Wi-Fi network name (SSID) and password.
 char ssid[] = "giveW5fullmarks";
 char pass[] = "password123";
 
@@ -664,6 +798,11 @@ char data;
 // WiFi Setup
 
 // Connection Setup
+/**
+ * Sets up the connection for the autonomous vehicle.
+ * This function initializes the necessary components and establishes the connection with the vehicle.
+ * It should be called once at the beginning of the program.
+ */
 void connectionSetup()
 {
 
@@ -687,6 +826,17 @@ void connectionSetup()
   server.begin();
 }
 
+/**
+ * @brief Connects the client to a server.
+ *
+ * This function establishes a connection between the client and a server.
+ * It is responsible for handling the necessary steps to establish the connection,
+ * such as initializing network settings and establishing a socket connection.
+ *
+ * @note This function assumes that the necessary network settings have been properly configured.
+ *
+ * @return void
+ */
 void connectClient()
 {
 
@@ -712,6 +862,16 @@ void connectClient()
 }
 
 // Check client connection
+/**
+ * @brief Checks the server for incoming commands and performs corresponding actions.
+ *
+ * This function reads data from the WebClient and performs different actions based on the received data.
+ * If the received data matches any of the predefined URLs, the function executes the corresponding action.
+ * If the received data is a speed command and the current mode is MODE_2_Speed_Control, the function calculates
+ * the desired speed based on the received data and updates the target speed and the almost car speed.
+ *
+ * @note This function assumes that the WebClient has been initialized and is connected to a server.
+ */
 void checkServer()
 {
 
@@ -778,7 +938,7 @@ void checkServer()
 
   case Mode2URL:
 
-    setMode = MODE_2_Speed_Control;
+    setMode = MODE_2_Speed_Control_PID;
 
     break;
 
@@ -788,7 +948,7 @@ void checkServer()
     // Serial.print(data);
 
     // Check if the current mode is MODE_2_Speed_Control
-    if (currentMode == MODE_2_Speed_Control)
+    if (currentMode == MODE_2_Speed_Control_PID)
     {
 
       // Calculate the desired speed based on the received data
@@ -801,8 +961,8 @@ void checkServer()
 
         // Update the target speed and the almost car speed with the new value
 
-        targetSpeedCmS = setSpeed;
-        carSpeedAlmostCmS = targetSpeedCmS;
+        targetSpeedCmS_MODE_2_Speed_Control_PID = setSpeed;
+        carSpeedAlmostCmS = targetSpeedCmS_MODE_2_Speed_Control_PID;
 
         // Print a message debugging the change in speed (commented out)
         // Serial.println("Inside Mode 2, Changing speed to: " + String(targetSpeedCmS));
@@ -813,11 +973,27 @@ void checkServer()
   }
 }
 
+/**
+ * Sends a message in CSV format.
+ *
+ * This function is responsible for sending a message in Comma-Separated Values (CSV) format.
+ * It performs the necessary operations to convert the message into a CSV string and sends it
+ * to the desired destination.
+ *
+ * The message includes the distance travelled by the car, car speed, nearest obstacle distance,
+ * current mode, and other relevant data.
+ *
+ * The message is constructed using the following format:
+ * "Distance travelled: <distance> Speed: <speed> Object at: <obstacle distance> Current mode: <mode>, etc"
+ *
+ * @param None
+ * @return None
+ */
 void sendMessageCSV()
 {
 
   // Construct a comma-separated value (CSV) message containing various data
-  // The data includes: distance travelled by the car in centimeters, average speed in millimeters per second,
+  // The data includes: distance travelled by the car in centimeters, average speed in centimeters per second,
   // and distance to the nearest obstacle in some unit (possibly centimeters).
   messageCSV = String(int(distanceTravelledByTheCarCm)) + "," + String(int(experimentalSpeedCmS)) + "," + String(int(nearestObstacleDistance)) + "," + String(int(2 * carSpeedAlmostCmS)) + "," + String(int(currentMode)) + "," + String(int(huskySaw)) + " \n ";
 
@@ -829,6 +1005,11 @@ void sendMessageCSV()
   // Serial.println(messageCSV);
 }
 
+/**
+ * Sends a message.
+ * Unlike the sendMessageCSV function, this function sends a message in a different format.
+ * Unused in the current implementation.
+ */
 void sendMessage()
 {
   /*
@@ -895,6 +1076,11 @@ const uint32_t W5[4] = {
 
 // Functions needed for Matrix
 
+/**
+ * Displays a the above patterns on the LED matrix.
+ * The smiley face pattern is loaded onto the matrix using the loadFrame() function.
+ */
+
 // Function to display a smiley pattern on the LED matrix
 void displaySmiley()
 {
@@ -930,6 +1116,11 @@ void displayW5()
 // Sensor Functions
 
 // Function to measure the closest obstacle distance using the ultrasonic sensor
+/**
+ * Calculates the distance to the closest obstacle using sonar.
+ *
+ * @return The distance to the closest obstacle in meters.
+ */
 double closestObstacleUsingSonar()
 {
 
@@ -958,6 +1149,19 @@ double closestObstacleUsingSonar()
 }
 
 // Checking the position relative to obstacles using the ultrasonic sensor
+/**
+ * @brief Checks the position of the object relative to the current position.
+ *
+ * This function is responsible for determining the position of the object relative to the current position.
+ * It sends a pulse to the ultrasonic sensor to measure the distance to the nearest obstacle.
+ * This distance is then used to determine the position of the object whuile following the object.
+ * The function also checks if the object is too close to the vehicle and stops the vehicle if necessary.
+ * It performs the necessary calculations and updates the necessary variables.
+ * It also switches the mode to MODE_1_Object_Following if the object is too close.
+ * Once the object is at a safe distance, the function switches back to the original mode.
+ *
+ * @return void
+ */
 void checkPositionRelativeToObject()
 {
 
@@ -1004,6 +1208,13 @@ void checkPositionRelativeToObject()
 }
 
 // Keeping the car moving while checking infrared sensors for tracking
+/**
+ * Keeps the vehicle moving while continuously checking the IR sensors.
+ * This function is responsible for maintaining the movement of the vehicle
+ * while constantly monitoring the IR sensors for any obstacles.
+ * It adjusts the direction of the vehicle based on the sensor readings.
+ * based on the readings of the husky lens, it can turn left or right on a forked path.
+ */
 void keepMovingCheckingIRSensors()
 {
 
@@ -1016,21 +1227,19 @@ void keepMovingCheckingIRSensors()
   // int irLeftValue = LOW;
   // int irRightValue = LOW;
 
-  Serial.print("irLeftValue: ");
-  Serial.println(irLeftValue);
-  Serial.print("irRightValue: ");
-  Serial.println(irRightValue);
+  // Serial.print("irLeftValue: ");
+  // Serial.println(irLeftValue);
+  // Serial.print("irRightValue: ");
+  // Serial.println(irRightValue);
 
-  if (irLeftValue == LOW && irRightValue == LOW)
+  if (irLeftValue == HIGH && irRightValue == HIGH)
   {
-    if (leftIRSensorSwitchedOnByLens)
-    {
-      turnLeft;
-    }
-    else if (rightIRSensorSwitchedOnByLens)
-    {
-      turnRight;
-    }
+
+    // Serial.println("Both sensors on track - moving forward");
+
+    // If both sensors are on track, move forward
+
+    moveForwardatSpeed(carSpeedAlmostCmS);
   }
   else if (irLeftValue == LOW && irRightValue == HIGH)
   {
@@ -1050,14 +1259,16 @@ void keepMovingCheckingIRSensors()
 
     turnRight();
   }
-  else if (irLeftValue == HIGH && irRightValue == HIGH)
+  else if (irLeftValue == LOW && irRightValue == LOW)
   {
-
-    // Serial.println("Both sensors on track - moving forward");
-
-    // If both sensors are on track, move forward
-
-    moveForwardatSpeed(carSpeedAlmostCmS);
+    if (leftIRSensorSwitchedOnByLens)
+    {
+      turnLeft();
+    }
+    else if (rightIRSensorSwitchedOnByLens)
+    {
+      turnRight();
+    }
   }
 
   // Serial.println("end of keepMovingCheckingIRSensors");
@@ -1068,6 +1279,12 @@ void keepMovingCheckingIRSensors()
 inline int mapSpeedCmSToPWM(double speed);
 
 // Mapping speed to PWM values
+/**
+ * Maps the given speed in centimeters per second to a corresponding PWM value.
+ *
+ * @param speed The speed in centimeters per second.
+ * @return The mapped PWM value.
+ */
 inline int mapSpeedCmSToPWM(double speed)
 {
 
@@ -1087,6 +1304,11 @@ inline int mapSpeedCmSToPWM(double speed)
 }
 
 // Function to move the car forward at a specified speed
+/**
+ * Moves the vehicle forward at the specified speed.
+ *
+ * @param speed The speed at which the vehicle should move forward.
+ */
 void moveForwardatSpeed(double speed)
 {
 
@@ -1113,6 +1335,9 @@ void moveForwardatSpeed(double speed)
 }
 
 // Function to stop the car
+/**
+ * Stops the car.
+ */
 void stopCar()
 {
 
@@ -1136,6 +1361,12 @@ void stopCar()
 }
 
 // Function to turn the car to the left
+/**
+ * Function: turnLeft
+ * ------------------
+ * This function is responsible for turning the autonomous vehicle to the left.
+ * It is used in the Arduino code for the Gold Challenge of the Autonomous Vehicle Arduino Project.
+ */
 void turnLeft()
 {
 
@@ -1163,6 +1394,12 @@ void turnLeft()
 }
 
 // Function to turn the car to the right
+/**
+ * Function: turnRight
+ * -------------------
+ * This function is responsible for turning the autonomous vehicle to the right.
+ * It is used in the Arduino code for the Gold Challenge.
+ */
 void turnRight()
 {
 
@@ -1191,6 +1428,14 @@ void turnRight()
 
 // decideTheCarsStatus
 
+/**
+ * @brief This function decides the status of the car based on the loop counter.
+ *        It performs different actions depending on the value of the loop counter.
+ *        If the loop counter is a multiple of 23, it checks the position relative to an object and adjusts the car speed accordingly.
+ *        If the loop counter is a multiple of 31, it checks the server.
+ *        If the loop counter is a multiple of 73, it asks the Husky.
+ *        If the loop counter is a multiple of 700, it calculates the distance travelled by the car, calculates the speed, sends a message in CSV format, and resets the loop counter.
+ */
 void decideTheCarsStatus()
 {
 
@@ -1208,20 +1453,27 @@ void decideTheCarsStatus()
 
       // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostCmS));
     }
-    else if (currentMode == MODE_2_Speed_Control)
+    else if (currentMode == MODE_2_Speed_Control_PID)
     {
 
       carSpeedAlmostCmS = PIDMaintainSpeed_sc_2();
 
       // Serial.println("Inside Speed PID change, changing speed to: " + String(carSpeedAlmostCmS));
     }
+    else if (currentMode == MODE_0_Speed_Set_by_Lens)
+    {
+      carSpeedAlmostCmS = targetSpeed_MODE_0_Speed_Set_by_Lens;
+
+      // Serial.println("Inside Lens Speed change, changing speed to: " + String(carSpeedAlmostCmS));
+    }
+
   }
   else if (loopCounter % 31 == 0)
   {
 
     checkServer();
   }
-  else if (loopCounter % 53 == 0)
+  else if (loopCounter % 73 == 0)
   {
 
     askHusky();
@@ -1257,6 +1509,19 @@ void decideTheCarsStatus()
 
 // moveITmaybe
 
+/**
+ *
+ * This function is responsible for moving the vehicle based on certain conditions.
+ * The Conditions include:
+ * 1. If no obstacles are too close, and the vehicle is not stopped through the GUI or the lens,
+ * it continues moving and checking the infrared sensors.
+ *
+ * 2. If an obstacle is too close, and the vehicle is not stopped through the GUI or the lens,
+ *  the vehicle delays for a brief period and then checks the position relative to the object.
+ *
+ * 3. If the vehicle is stopped through the GUI or the lens, it doesnt do anything.
+ *
+ */
 void moveITmaybe()
 {
 
@@ -1279,6 +1544,14 @@ void moveITmaybe()
 
 // Initialise stuff
 
+/**
+ * @brief Initializes the necessary stuff.
+ *
+ * This function is responsible for initializing the necessary components or variables
+ * required for the program to run correctly.
+ *
+ * @return void
+ */
 void initialiseStuff()
 {
 
@@ -1316,6 +1589,13 @@ void initialiseStuff()
 // Arduino functions
 
 // Initialization function executed once at the start of the program
+/**
+ * @brief Initializes the Arduino board and sets up the necessary components and connections.
+ *
+ * This function is called once when the Arduino board is powered on or reset. It initializes the serial communication,
+ * sets up the connection with the client, configures the interrupt service routines (ISRs) for the encoders, and performs
+ * other necessary setup tasks. After the setup is completed, the Arduino is ready to execute the main loop.
+ */
 void setup()
 {
 
@@ -1447,9 +1727,16 @@ void setup()
 }
 
 // Main execution loop function that runs continuously after setup
+/**
+ * @brief The main loop function that runs repeatedly in the Arduino program.
+ *
+ * This function is responsible for controlling the primary logic of the program.
+ * It delegates the control to other functions, such as `decideTheCarsStatus()` and `moveITmaybe()`.
+ * It also increments the loop counter for each iteration.
+ */
+
 void loop()
 {
-
   // Delegate the primary control logic
   // Serial.print('.');
 
@@ -1468,3 +1755,239 @@ void loop()
   // Serial.println("end of loop");
 }
 
+// End of Code
+#line 1 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\test_Gold-Challenge-Code.ino"
+#include <iostream>
+
+// Test case 1: Verify the value of the startURL macro
+void test_startURL() {
+    char expected = 'Z';
+    char actual = startURL;
+    if (actual == expected) {
+        std::cout << "Test case 1 passed." << std::endl;
+    } else {
+        std::cout << "Test case 1 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 2: Verify the value of the stopURL macro
+void test_stopURL() {
+    char expected = 'X';
+    char actual = stopURL;
+    if (actual == expected) {
+        std::cout << "Test case 2 passed." << std::endl;
+    } else {
+        std::cout << "Test case 2 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 3: Verify the value of the displayHeartURL macro
+void test_displayHeartURL() {
+    char expected = 'H';
+    char actual = displayHeartURL;
+    if (actual == expected) {
+        std::cout << "Test case 3 passed." << std::endl;
+    } else {
+        std::cout << "Test case 3 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 4: Verify the value of the displaySmileyURL macro
+void test_displaySmileyURL() {
+    char expected = 'S';
+    char actual = displaySmileyURL;
+    if (actual == expected) {
+        std::cout << "Test case 4 passed." << std::endl;
+    } else {
+        std::cout << "Test case 4 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 5: Verify the value of the displayW5URL macro
+void test_displayW5URL() {
+    char expected = 'W';
+    char actual = displayW5URL;
+    if (actual == expected) {
+        std::cout << "Test case 5 passed." << std::endl;
+    } else {
+        std::cout << "Test case 5 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 6: Verify the value of the Mode0URL macro
+void test_Mode0URL() {
+    char expected = 'A';
+    char actual = Mode0URL;
+    if (actual == expected) {
+        std::cout << "Test case 6 passed." << std::endl;
+    } else {
+        std::cout << "Test case 6 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 7: Verify the value of the Mode2URL macro
+void test_Mode2URL() {
+    char expected = 'C';
+    char actual = Mode2URL;
+    if (actual == expected) {
+        std::cout << "Test case 7 passed." << std::endl;
+    } else {
+        std::cout << "Test case 7 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 8: Verify the value of the LeftIRSensorInput constant
+void test_LeftIRSensorInput() {
+    int expected = A1;
+    int actual = LeftIRSensorInput;
+    if (actual == expected) {
+        std::cout << "Test case 8 passed." << std::endl;
+    } else {
+        std::cout << "Test case 8 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 9: Verify the value of the RightIRSensorInput constant
+void test_RightIRSensorInput() {
+    int expected = A0;
+    int actual = RightIRSensorInput;
+    if (actual == expected) {
+        std::cout << "Test case 9 passed." << std::endl;
+    } else {
+        std::cout << "Test case 9 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 10: Verify the value of the RightMotorPWM constant
+void test_RightMotorPWM() {
+    int expected = 10;
+    int actual = RightMotorPWM;
+    if (actual == expected) {
+        std::cout << "Test case 10 passed." << std::endl;
+    } else {
+        std::cout << "Test case 10 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 11: Verify the value of the LeftMotorPWM constant
+void test_LeftMotorPWM() {
+    int expected = 9;
+    int actual = LeftMotorPWM;
+    if (actual == expected) {
+        std::cout << "Test case 11 passed." << std::endl;
+    } else {
+        std::cout << "Test case 11 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 12: Verify the value of the RightMotorSwitch1 constant
+void test_RightMotorSwitch1() {
+    int expected = 11;
+    int actual = RightMotorSwitch1;
+    if (actual == expected) {
+        std::cout << "Test case 12 passed." << std::endl;
+    } else {
+        std::cout << "Test case 12 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 13: Verify the value of the RightMotorSwitch2 constant
+void test_RightMotorSwitch2() {
+    int expected = 12;
+    int actual = RightMotorSwitch2;
+    if (actual == expected) {
+        std::cout << "Test case 13 passed." << std::endl;
+    } else {
+        std::cout << "Test case 13 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 14: Verify the value of the LeftMotorSwitch3 constant
+void test_LeftMotorSwitch3() {
+    int expected = 8;
+    int actual = LeftMotorSwitch3;
+    if (actual == expected) {
+        std::cout << "Test case 14 passed." << std::endl;
+    } else {
+        std::cout << "Test case 14 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 15: Verify the value of the LeftMotorSwitch4 constant
+void test_LeftMotorSwitch4() {
+    int expected = 7;
+    int actual = LeftMotorSwitch4;
+    if (actual == expected) {
+        std::cout << "Test case 15 passed." << std::endl;
+    } else {
+        std::cout << "Test case 15 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 16: Verify the value of the UltrasonicTrigger constant
+void test_UltrasonicTrigger() {
+    int expected = 5;
+    int actual = UltrasonicTrigger;
+    if (actual == expected) {
+        std::cout << "Test case 16 passed." << std::endl;
+    } else {
+        std::cout << "Test case 16 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 17: Verify the value of the UltrasonicEchoDetector constant
+void test_UltrasonicEchoDetector() {
+    int expected = 4;
+    int actual = UltrasonicEchoDetector;
+    if (actual == expected) {
+        std::cout << "Test case 17 passed." << std::endl;
+    } else {
+        std::cout << "Test case 17 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 18: Verify the value of the LED_PIN constant
+void test_LED_PIN() {
+    int expected = 13;
+    int actual = LED_PIN;
+    if (actual == expected) {
+        std::cout << "Test case 18 passed." << std::endl;
+    } else {
+        std::cout << "Test case 18 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+// Test case 19: Verify the value of the SPEAKER_PIN constant
+void test_SPEAKER_PIN() {
+    int expected = 6;
+    int actual = SPEAKER_PIN;
+    if (actual == expected) {
+        std::cout << "Test case 19 passed." << std::endl;
+    } else {
+        std::cout << "Test case 19 failed. Expected: " << expected << ", Actual: " << actual << std::endl;
+    }
+}
+
+int main() {
+    test_startURL();
+    test_stopURL();
+    test_displayHeartURL();
+    test_displaySmileyURL();
+    test_displayW5URL();
+    test_Mode0URL();
+    test_Mode2URL();
+    test_LeftIRSensorInput();
+    test_RightIRSensorInput();
+    test_RightMotorPWM();
+    test_LeftMotorPWM();
+    test_RightMotorSwitch1();
+    test_RightMotorSwitch2();
+    test_LeftMotorSwitch3();
+    test_LeftMotorSwitch4();
+    test_UltrasonicTrigger();
+    test_UltrasonicEchoDetector();
+    test_LED_PIN();
+    test_SPEAKER_PIN();
+
+    return 0;
+}
