@@ -25,8 +25,8 @@ const double MinSpeedCmS = 0;
 const double MaxSpeedCmS = 50;
 const int PWMMin = 0;
 const int PWMMax = 225;
-const int TurnSpeedOuterPulseWidth = 190;
-const int TurnSpeedInnerPulseWidth = 60;
+const int turnSpeedOuterPulseWidth = 190;
+const int turnSpeedInnerPulseWidth = 60;
 const int EncoderPulsesPerRevolution = 4;
 const int CriticalObjectDistance = 10;
 const int ObjectFollowingDistance = 20;
@@ -41,7 +41,7 @@ double carSpeedAlmostCmS = MaxSpeedCmS;
 unsigned long loopCounter = 0;
 bool StopTheCarThroughGUI = true;
 double distanceTravelledByTheCarCm = (leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheelCm / EncoderPulsesPerRevolution;
-double targetSpeedCmS = MaxSpeedCmS;
+double targetSpeedCmS_MODE_2_Speed_Control_PID = MaxSpeedCmS;
 
 double arcLengthMm = (double)(1000 * radiusOfWheel * 45 / 360);
 volatile unsigned long leftTimePrev = millis();
@@ -88,7 +88,7 @@ double PIDMaintainSpeed_sc_2()
   elapsedTime_sc_2 = (double)(currentTime_sc_2 - previousTime_sc_2);
 
   // Calculate error
-  error_sc_2 = (double)(targetSpeedCmS - averageSpeedCmS);
+  error_sc_2 = (double)(targetSpeedCmS_MODE_2_Speed_Control_PID - averageSpeedCmS);
 
   // Serial.println("Error_sc_2 = " + String(error_sc_2));
 
@@ -223,10 +223,10 @@ void turnLeft()
 {
   analogWrite(
       RightMotorPWM,
-      RightWheelCoefficient * TurnSpeedOuterPulseWidth);
+      RightWheelCoefficient * turnSpeedOuterPulseWidth);
   analogWrite(
       LeftMotorPWM,
-      LeftWheelCoefficient * TurnSpeedInnerPulseWidth);
+      LeftWheelCoefficient * turnSpeedInnerPulseWidth);
   digitalWrite(RightMotorSwitchActive, HIGH);
   digitalWrite(LeftMotorSwitchActive, HIGH);
 }
@@ -235,10 +235,10 @@ void turnRight()
 {
   analogWrite(
       RightMotorPWM,
-      RightWheelCoefficient * TurnSpeedInnerPulseWidth);
+      RightWheelCoefficient * turnSpeedInnerPulseWidth);
   analogWrite(
       LeftMotorPWM,
-      LeftWheelCoefficient * TurnSpeedOuterPulseWidth);
+      LeftWheelCoefficient * turnSpeedOuterPulseWidth);
   digitalWrite(RightMotorSwitchActive, HIGH);
   digitalWrite(LeftMotorSwitchActive, HIGH);
 }
