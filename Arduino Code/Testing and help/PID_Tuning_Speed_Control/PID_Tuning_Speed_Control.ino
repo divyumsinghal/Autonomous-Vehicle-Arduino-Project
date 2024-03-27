@@ -25,8 +25,8 @@ const double MinSpeedCmS = 0;
 const double MaxSpeedCmS = 50;
 const int PWMMin = 0;
 const int PWMMax = 225;
-const int TurnSpeedOuterPulseWidth = 190;
-const int TurnSpeedInnerPulseWidth = 60;
+const int turnSpeedOuterPulseWidth = 190;
+const int turnSpeedInnerPulseWidth = 60;
 const int EncoderPulsesPerRevolution = 4;
 const int CriticalObjectDistance = 10;
 const int ObjectFollowingDistance = 20;
@@ -223,10 +223,10 @@ void turnLeft()
 {
   analogWrite(
       RightMotorPWM,
-      RightWheelCoefficient * TurnSpeedOuterPulseWidth);
+      RightWheelCoefficient * turnSpeedOuterPulseWidth);
   analogWrite(
       LeftMotorPWM,
-      LeftWheelCoefficient * TurnSpeedInnerPulseWidth);
+      LeftWheelCoefficient * turnSpeedInnerPulseWidth);
   digitalWrite(RightMotorSwitchActive, HIGH);
   digitalWrite(LeftMotorSwitchActive, HIGH);
 }
@@ -235,10 +235,10 @@ void turnRight()
 {
   analogWrite(
       RightMotorPWM,
-      RightWheelCoefficient * TurnSpeedInnerPulseWidth);
+      RightWheelCoefficient * turnSpeedInnerPulseWidth);
   analogWrite(
       LeftMotorPWM,
-      LeftWheelCoefficient * TurnSpeedOuterPulseWidth);
+      LeftWheelCoefficient * turnSpeedOuterPulseWidth);
   digitalWrite(RightMotorSwitchActive, HIGH);
   digitalWrite(LeftMotorSwitchActive, HIGH);
 }

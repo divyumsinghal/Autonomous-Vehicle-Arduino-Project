@@ -26,7 +26,11 @@ String SpeedPWMpercent = "0";
 String ObstacleDistance = "5";
 String ModeReadFromServer = "0";
 String TagReadFromServer = "0";
+String lastTagSeen = "0";
+String leftIRSensorSwitchedOnByLens = "0";
+String rightIRSensorSwitchedOnByLens = "0";
 String ModeName = "Object Following";
+
 
 
 String[] values;
@@ -34,7 +38,7 @@ String message = "0,0,0,0,0,0";
 
 void setup() {
   myClient = new Client(this, serverAddress, 5200);
-  size(1200, 900);
+  size(1200, 1100);
   cp5 = new ControlP5(this);
 
   int buttonX = 100;
@@ -131,6 +135,9 @@ void draw() {
   text("Speed percentage of PWM Signal: " + SpeedPWMpercent, 500, 800);
 
   text("Tag read: " + TagReadFromServer, 500, 850);
+  text("Tag Speed Control read: " + lastTagSeen, 500, 900);
+  text("leftIRSensorSwitchedOnByLens: " + leftIRSensorSwitchedOnByLens, 500, 950);
+  text("rightIRSensorSwitchedOnByLens: " + rightIRSensorSwitchedOnByLens, 500, 1000);
 
 
   speedometer.updateMeter(int(SpeedTravelled));
@@ -180,13 +187,16 @@ void readClientCSV() {
   message = myClient.readStringUntil('\n');
   if (message != null) {
     values = split(message, ',');
-    if (values.length == 6) {
+    if (values.length == 9) {
       Distance_travelled = values[0];
       SpeedTravelled = values[1];
       ObstacleDistance = values[2];
       SpeedPWMpercent = values[3];
       ModeReadFromServer = values[4];
       TagReadFromServer = values[5];
+      lastTagSeen = values[6];
+      leftIRSensorSwitchedOnByLens = values[7];
+      rightIRSensorSwitchedOnByLens = values[8];
     }
   }
 }

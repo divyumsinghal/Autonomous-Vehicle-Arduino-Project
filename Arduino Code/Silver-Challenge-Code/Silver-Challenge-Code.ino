@@ -47,8 +47,8 @@ const double MinSpeedCmS = 0;                  // Minimum speed CmS for the car
 const double MaxSpeedCmS = 50;                 // Maximum speed CmS for the car
 const int PWMMin = 0;                          // Minimum PWM value
 const int PWMMax = 140;                        // Maximum PWM value (capping it at 135 instead of 255)
-const int TurnSpeedOuterPulseWidth = 115;      // Turning speed for outer wheel
-const int TurnSpeedInnerPulseWidth = 30;       // Turning speed for inner wheel
+const int turnSpeedOuterPulseWidth = 115;      // Turning speed for outer wheel
+const int turnSpeedInnerPulseWidth = 30;       // Turning speed for inner wheel
 const int EncoderPulsesPerRevolution = 4;      // Encoder generates 8 pulses per revolution -> 4 rising are tracked
 const int CriticalObjectDistance = 10;         // Critical distance for detecting obstacles
 const int ObjectFollowingDistance = 20;        // A slightly larger and safer distance
@@ -760,12 +760,12 @@ void turnLeft()
 
   analogWrite(
       RightMotorPWM,
-      RightWheelCoefficient * TurnSpeedOuterPulseWidth);
+      RightWheelCoefficient * turnSpeedOuterPulseWidth);
 
   // Stop the left motor
   analogWrite(
       LeftMotorPWM,
-      LeftWheelCoefficient * TurnSpeedInnerPulseWidth);
+      LeftWheelCoefficient * turnSpeedInnerPulseWidth);
 
   // Switch on
 
@@ -787,12 +787,12 @@ void turnRight()
 
   analogWrite(
       RightMotorPWM,
-      RightWheelCoefficient * TurnSpeedInnerPulseWidth);
+      RightWheelCoefficient * turnSpeedInnerPulseWidth);
 
   // Adjust the left motor PWM for a right turn
   analogWrite(
       LeftMotorPWM,
-      LeftWheelCoefficient * TurnSpeedOuterPulseWidth);
+      LeftWheelCoefficient * turnSpeedOuterPulseWidth);
 
   // Switch on
 

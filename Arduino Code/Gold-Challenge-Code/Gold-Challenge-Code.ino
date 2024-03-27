@@ -57,7 +57,7 @@ const int LeftMotorSwitch4 = 7;       // Motor control pin 4 for the left motor
 const int UltrasonicTrigger = 5;      // Digital pin for triggering the ultrasonic sensor
 const int UltrasonicEchoDetector = 4; // Digital pin for detecting the echo from the ultrasonic sensor
 const int LED_PIN = 13;               // Digital pin for the LED
-const int SPEAKER_PIN = 6;            // Pin for Speaker
+const int SpeakerPin = 6;             // Pin for Speaker
 
 /**
  * @brief The active switch for the right motor.
@@ -83,7 +83,9 @@ const double LeftWheelCoefficient = 1;         // Coefficient for adjusting left
 const double MinSpeedCmS = 0;                  // Minimum speed CmS for the car
 const double MaxSpeedCmS = 50;                 // Maximum speed CmS for the car
 const int PWMMin = 0;                          // Minimum PWM value
-const int PWMMax = 160;                        // Maximum PWM value (capping it instead of 255)
+const int PWMMax = 130;                        // Maximum PWM value (capping it instead of 255)
+const int Black = HIGH;                        // Black color for the Ir sensor
+const int White = LOW;                         // White color for the Ir sensor
 const int EncoderPulsesPerRevolution = 4;      // Encoder generates 8 pulses per revolution -> 4 rising are tracked
 const int CriticalObjectDistance = 10;         // Critical distance for detecting obstacles
 const int ObjectFollowingDistance = 20;        // A slightly larger and safer distance
@@ -92,33 +94,62 @@ const double SPEED_OF_SOUND_CM_PER_MS = 0.017; // Conversion factor for microsec
 const double radiusOfWheelCm = 3.5;            // radius of wheel in cm
 const double arcLengthCorrection = 0.35;       // correction for speed
 
-/**
- * @brief The frequency of the selection of sounds.
- *
- * Thess constants represent the frequency of the sounds in Hertz.
- * Modify these values to change the frequency of the sounds.
- */
-const int WaitSound = 1000;     // Bad Sound in Hertz
-const int GoodSound = 20;       // Good Sound in Hertz
-const int DangerSound = 100000; // Danger Sound in Hertz
-const int Sound = 10000;
-
 // more variables
 double nearestObstacleDistance = 100;                         // Distance to the nearest obstacle from ultrasonic sensor
 bool obstacleTooClose = false;                                // Flag indicating if an obstacle is too close
 double carSpeedAlmostCmS = MaxSpeedCmS;                       // Current speed of the car
 unsigned long loopCounter = 0;                                // Counter for obstacle tracking frequency
 bool StopTheCarThroughGUI = true;                             // Control if you want the car to move
-bool StopTheCarThroughLens = false;                           // Control if you want the car to move
+bool stopTheCarThroughLens = false;                           // Control if you want the car to move
 double distanceTravelledByTheCarCm = 0;                       // How far have the wheels spun (in cm)
 double targetSpeedCmS_MODE_2_Speed_Control_PID = MaxSpeedCmS; // Speed to reach in mode 2
 double targetSpeed_MODE_0_Speed_Set_by_Lens = MaxSpeedCmS;    // Speed to reach in mode 0
 bool leftIRSensorSwitchedOnByLens = false;                    // Switch on or off IR sensors using husky lens
 bool rightIRSensorSwitchedOnByLens = true;                    // Switch on or off IR sensors using husky lens
-int TurnSpeedOuterPulseWidth = 115;                           // Turning speed for outer wheel
-int TurnSpeedInnerPulseWidth = 30;                            // Turning speed for inner wheel
-int nearWidthThreshold = 10;                                  // Threshold for near width for checking the last tag seen by husky lens
-int nearHeightThreshold = 10;                                 // Threshold for near height for checking the last tag seen by husky lens
+int turnSpeedOuterPulseWidth = 115;                           // Turning speed for outer wheel
+int turnSpeedInnerPulseWidth = 30;                            // Turning speed for inner wheel
+int nearWidthThreshold = 40;                                  // Threshold for near width for checking the last tag seen by husky lens
+int nearHeightThreshold = 40;                                 // Threshold for near height for checking the last tag seen by husky lens
+
+// Sound
+
+// Define an enumeration for sounds
+/**
+ * 
+ * Stores the files to be played on the speaker.
+ * these are sent to the other arduino to play the sound
+ * 
+ * 
+ */
+enum Sound
+{
+
+  Sound1,
+  Sound2,
+  Sound3,
+  Sound4
+
+};
+
+// Play Sound on Speaker
+/**
+ * Plays a sound on the speaker.
+ *
+ * Sends a value to the  other arduino of which file to play
+ * 0 -> Sound1
+ * 1 -> Sound2
+ * 2 -> Sound3
+ * 3 -> Sound4 
+ * 
+ * @param command The sound command to be played.
+ */
+void PlaySoundOnSpeaker(Sound command)
+{
+
+  // Play the sound on the speaker
+  analogWrite(SpeakerPin, 50 * int(command));
+}
+
 
 // Define Matrix
 
@@ -447,7 +478,7 @@ void huskyLensSetup()
     Serial.println(F("1. Please recheck the \"Protocol Type\" in HUSKYLENS (General Settings>>Protocol Type>>I2C)"));
     Serial.println(F("2. Please recheck the connection."));
 
-    tone(SPEAKER_PIN, WaitSound);
+    PlaySoundOnSpeaker(Sound2);
 
     // Introduce a brief delay before retrying initialization
     delay(1000);
@@ -548,7 +579,7 @@ void askHusky()
     HUSKYLENSResult result = huskylens.read();
 
     // Print the result to the Serial Monitor fir debigging purposes
-    printResult(result);
+    // printResult(result);
 
     // Convert the ID to a TAG object and store it in the huskySaw variable
     huskySaw = static_cast<TAG>(result.ID);
@@ -562,7 +593,7 @@ void askHusky()
     case TAG_1_Start:
 
       // Serial.println(huskySaw);
-      StopTheCarThroughLens = false;
+      stopTheCarThroughLens = false;
       // Serial.println(huskySaw);
 
       break;
@@ -570,7 +601,7 @@ void askHusky()
     case TAG_2_Stop:
 
       // Serial.println(huskySaw);
-      StopTheCarThroughLens = true;
+      stopTheCarThroughLens = true;
       stopCar();
 
       break;
@@ -627,6 +658,10 @@ void askHusky()
       {
         lastTagSeen = TAG_8_Slow_Down;
       }
+      else
+      {
+        huskySaw = TAG_0;
+      }
 
       // Serial.println(huskySaw);
 
@@ -640,6 +675,10 @@ void askHusky()
       if (result.width > nearWidthThreshold || result.height > nearHeightThreshold)
       {
         lastTagSeen = TAG_9_Speed_Up;
+      }
+      else
+      {
+        huskySaw = TAG_0;
       }
 
       // Serial.println(huskySaw);
@@ -668,7 +707,7 @@ void askHusky()
       // change the target speed to half of the maximum speed
       // only do this when the tag is no longer visible, ie the car has reached the tag
 
-      targetSpeed_MODE_0_Speed_Set_by_Lens = MaxSpeedCmS / 2;
+      targetSpeed_MODE_0_Speed_Set_by_Lens = MaxSpeedCmS / 1.25;
 
       // Serial.println(huskySaw);
 
@@ -695,7 +734,12 @@ enum Face
 {
 
   No_face, // no need
-  Divyum   // me
+  Divyum,  // me
+  Face_2,  // other
+  Face_3,  // other
+  Face_4,  // other
+  Face_5,  // other
+  Face_6
 
 };
 
@@ -712,7 +756,7 @@ void huskyLensLogin()
   while (!login)
   {
 
-    tone(SPEAKER_PIN, WaitSound);
+    PlaySoundOnSpeaker(Sound2);
 
     // Check if HuskyLens is ready and a face is learned and available
     if (huskylens.request() && huskylens.isLearned() && huskylens.available())
@@ -724,8 +768,9 @@ void huskyLensLogin()
       Face huskyFace = static_cast<Face>(result.ID); // Casting the ID from result
 
       // Check if the recognized face matches the expected user
-      if (huskyFace == Divyum)
+      switch (huskyFace)
       {
+      case Divyum:
         // Set login flag to true
         login = true;
 
@@ -735,19 +780,43 @@ void huskyLensLogin()
         Serial.println("Please follow the driving rules!");
         Serial.println("Please switch the HuskyLens to tag recognition mode!");
 
-        tone(SPEAKER_PIN, GoodSound);
-      }
-      else
-      {
+        PlaySoundOnSpeaker(Sound3);
+
+        break;
+
+      case Face_2:
+
+        break;
+
+      case Face_3:
+
+        break;
+
+      case Face_4:
+
+        break;
+
+      case Face_5:
+
+        break;
+
+      case Face_6:
+
+        break;
+
+      default:
+
         // Notify user that the recognized face is not authorized
         Serial.println("Face Not Recognised, Please go away!");
 
-        tone(SPEAKER_PIN, DangerSound);
+        PlaySoundOnSpeaker(Sound4);
 
         matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
 
         // Delay to avoid continuous processing
         delay(500);
+
+        break;
       }
     }
   }
@@ -829,7 +898,7 @@ void connectClient()
     // used for debugging purposes to indicate that the program is still attempting to establish a connection
     Serial.print("-");
 
-    tone(SPEAKER_PIN, WaitSound);
+    PlaySoundOnSpeaker(Sound2);
 
     // This line introduces a delay of 100 milliseconds.
     // It's a common practice to add a delay when waiting for a connection attempt to prevent
@@ -838,7 +907,7 @@ void connectClient()
     delay(200);
   }
 
-  tone(SPEAKER_PIN, GoodSound);
+  PlaySoundOnSpeaker(Sound3);
 }
 
 // Check client connection
@@ -975,7 +1044,7 @@ void sendMessageCSV()
   // Construct a comma-separated value (CSV) message containing various data
   // The data includes: distance travelled by the car in centimeters, average speed in centimeters per second,
   // and distance to the nearest obstacle in some unit (possibly centimeters).
-  messageCSV = String(int(distanceTravelledByTheCarCm)) + "," + String(int(experimentalSpeedCmS)) + "," + String(int(nearestObstacleDistance)) + "," + String(int(2 * carSpeedAlmostCmS)) + "," + String(int(currentMode)) + "," + String(int(huskySaw)) + " \n ";
+  messageCSV = String(int(distanceTravelledByTheCarCm)) + "," + String(int(experimentalSpeedCmS)) + "," + String(int(nearestObstacleDistance)) + "," + String(int(2 * carSpeedAlmostCmS)) + "," + String(currentMode) + "," + String(huskySaw) + "," + String(lastTagSeen) + "," + String(leftIRSensorSwitchedOnByLens) + "," + String(rightIRSensorSwitchedOnByLens) + " \n ";
 
   // Write the constructed CSV message to the Processing client
   // The WebClient object is assumed to have a write function that accepts a character array and its length
@@ -1212,7 +1281,7 @@ void keepMovingCheckingIRSensors()
   // Serial.print("irRightValue: ");
   // Serial.println(irRightValue);
 
-  if (irLeftValue == HIGH && irRightValue == HIGH)
+  if (irLeftValue == Black && irRightValue == Black)
   {
 
     // Serial.println("Both sensors on track - moving forward");
@@ -1221,7 +1290,7 @@ void keepMovingCheckingIRSensors()
 
     moveForwardatSpeed(carSpeedAlmostCmS);
   }
-  else if (irLeftValue == LOW && irRightValue == HIGH)
+  else if (irLeftValue == White && irRightValue == Black)
   {
 
     // Serial.println("Left sensor off track - turning left");
@@ -1230,7 +1299,7 @@ void keepMovingCheckingIRSensors()
 
     turnLeft();
   }
-  else if (irLeftValue == HIGH && irRightValue == LOW)
+  else if (irLeftValue == Black && irRightValue == White)
   {
 
     // Serial.println("Right sensor off track - turning Right");
@@ -1239,7 +1308,7 @@ void keepMovingCheckingIRSensors()
 
     turnRight();
   }
-  else if (irLeftValue == LOW && irRightValue == LOW)
+  else if (irLeftValue == White && irRightValue == White)
   {
     if (leftIRSensorSwitchedOnByLens)
     {
@@ -1358,12 +1427,12 @@ void turnLeft()
 
   analogWrite(
       RightMotorPWM,
-      RightWheelCoefficient * TurnSpeedOuterPulseWidth);
+      RightWheelCoefficient * turnSpeedOuterPulseWidth);
 
   // Stop the left motor
   analogWrite(
       LeftMotorPWM,
-      LeftWheelCoefficient * TurnSpeedInnerPulseWidth);
+      LeftWheelCoefficient * turnSpeedInnerPulseWidth);
 
   // Switch on
 
@@ -1390,12 +1459,12 @@ void turnRight()
 
   analogWrite(
       RightMotorPWM,
-      RightWheelCoefficient * TurnSpeedInnerPulseWidth);
+      RightWheelCoefficient * turnSpeedInnerPulseWidth);
 
   // Adjust the left motor PWM for a right turn
   analogWrite(
       LeftMotorPWM,
-      LeftWheelCoefficient * TurnSpeedOuterPulseWidth);
+      LeftWheelCoefficient * turnSpeedOuterPulseWidth);
 
   // Switch on
 
@@ -1502,7 +1571,7 @@ void decideTheCarsStatus()
 void moveITmaybe()
 {
 
-  if (!obstacleTooClose && !StopTheCarThroughGUI && !StopTheCarThroughLens)
+  if (!obstacleTooClose && !StopTheCarThroughGUI && !stopTheCarThroughLens)
   {
 
     // Continue moving and checking infrared sensors if no obstacles are too close
@@ -1510,7 +1579,7 @@ void moveITmaybe()
 
     keepMovingCheckingIRSensors();
   }
-  else if (!StopTheCarThroughGUI && !StopTheCarThroughLens) // obstacleTooClose &&
+  else if (!StopTheCarThroughGUI && !stopTheCarThroughLens) // obstacleTooClose &&
   {
 
     delayMicroseconds(3000);
@@ -1557,7 +1626,7 @@ void initialiseStuff()
   pinMode(RightEncoder, INPUT_PULLUP); // Configure the right motor encoder pin with pull-up resistor enabled
                                        // & logic inversion (a 20 k resistor in parallel for impedence control)
 
-  pinMode(SPEAKER_PIN, OUTPUT); // Set the speaker pin as an output
+  pinMode(SpeakerPin, OUTPUT); // Set the speaker pin as an output
 
   // Initialize the LED matrix for further use
   matrix.begin();
@@ -1700,7 +1769,7 @@ void setup()
 
   Serial.println("Happy Driving!");
 
-  noTone(SPEAKER_PIN); // Stop the tone
+  PlaySoundOnSpeaker(Sound1); // Stop the PlaySoundOnSpeaker
 }
 
 // Main execution loop function that runs continuously after setup
