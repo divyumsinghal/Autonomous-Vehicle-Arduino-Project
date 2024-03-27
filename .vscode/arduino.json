@@ -9,6 +9,8 @@
         "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries",
         "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries\\WiFiS3\\src",
         "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries\\Arduino_LED_Matrix\\src",
-        "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries\\Arduino_Uno_WiFi_Dev_Ed_Library\\src"
+        "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Documents\\Arduino\\libraries\\Arduino_Uno_WiFi_Dev_Ed_Library\\src",
+        "C:\\Users\\divyu\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\libraries\\SPI\\src\\SPI.h"
+
     ]
 }
