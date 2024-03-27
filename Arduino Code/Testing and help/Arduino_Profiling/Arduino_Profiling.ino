@@ -121,7 +121,7 @@ int nearHeightThreshold = 40;                                 // Threshold for n
  * 
  * 
  */
-enum Sound
+enum MusicFile
 {
 
   Sound1,
@@ -143,7 +143,7 @@ enum Sound
  * 
  * @param command The sound command to be played.
  */
-void PlaySoundOnSpeaker(Sound command)
+void PlaySoundOnSpeaker(MusicFile command)
 {
 
   // Play the sound on the speaker
