@@ -38,11 +38,6 @@
 // Include the library for setting up Wire
 #include "SoftwareSerial.h"
 
-// Inculde the library for Talkie in order to set up the speaker
-// #include "Talkie.h"
-// #include "Vocab_US_Large.h"
-// Talkie voice;
-
 // Variables
 
 // Pin Definitions
@@ -83,7 +78,7 @@ const double LeftWheelCoefficient = 1;         // Coefficient for adjusting left
 const double MinSpeedCmS = 0;                  // Minimum speed CmS for the car
 const double MaxSpeedCmS = 50;                 // Maximum speed CmS for the car
 const int PWMMin = 0;                          // Minimum PWM value
-const int PWMMax = 130;                        // Maximum PWM value (capping it instead of 255)
+const int PWMMax = 220;                        // Maximum PWM value (capping it instead of 255)
 const int Black = HIGH;                        // Black color for the Ir sensor
 const int White = LOW;                         // White color for the Ir sensor
 const int EncoderPulsesPerRevolution = 4;      // Encoder generates 8 pulses per revolution -> 4 rising are tracked
@@ -106,8 +101,8 @@ double targetSpeedCmS_MODE_2_Speed_Control_PID = MaxSpeedCmS; // Speed to reach 
 double targetSpeed_MODE_0_Speed_Set_by_Lens = MaxSpeedCmS;    // Speed to reach in mode 0
 bool leftIRSensorSwitchedOnByLens = false;                    // Switch on or off IR sensors using husky lens
 bool rightIRSensorSwitchedOnByLens = true;                    // Switch on or off IR sensors using husky lens
-int turnSpeedOuterPulseWidth = 115;                           // Turning speed for outer wheel
-int turnSpeedInnerPulseWidth = 30;                            // Turning speed for inner wheel
+int turnSpeedOuterPulseWidth = 200;                           // Turning speed for outer wheel
+int turnSpeedInnerPulseWidth = 60;                            // Turning speed for inner wheel
 int nearWidthThreshold = 40;                                  // Threshold for near width for checking the last tag seen by husky lens
 int nearHeightThreshold = 40;                                 // Threshold for near height for checking the last tag seen by husky lens
 
@@ -128,12 +123,12 @@ enum MusicFile
 {
 
   NoSoundToBePlayed = 0,
-  Sound1 = base + quantisation_level,
-  Sound2 = base + 2 * quantisation_level,
-  Sound3 = base + 3 * quantisation_level,
-  Sound4 = base + 4 * quantisation_level,
-  Sound5 = base + 5 * quantisation_level,
-  Sound6 = base + 6 * quantisation_level,
+  IDAccepted = base + quantisation_level,
+  ObjectDetected = base + 2 * quantisation_level,
+  GUIstop = base + 3 * quantisation_level,
+  SignSTop = base + 4 * quantisation_level,
+  Right = base + 5 * quantisation_level,
+  Left = base + 6 * quantisation_level,
   Sound7 = base + 7 * quantisation_level,
   Sound8 = base + 8 * quantisation_level,
   Sound9 = base + 9 * quantisation_level,
@@ -159,6 +154,13 @@ void PlaySoundOnSpeaker(MusicFile command)
 {
   // Play the sound on the speaker
   analogWrite(SpeakerPin, int(command));
+
+  Serial.println(int(command));
+
+  delay(100); // Delay to allow the sound to be detetected
+
+  // Stop the sound
+  analogWrite(SpeakerPin, 0);
 }
 
 // Define Matrix
@@ -488,7 +490,7 @@ void huskyLensSetup()
     Serial.println(F("1. Please recheck the \"Protocol Type\" in HUSKYLENS (General Settings>>Protocol Type>>I2C)"));
     Serial.println(F("2. Please recheck the connection."));
 
-    PlaySoundOnSpeaker(Sound2);
+    // PlaySoundOnSpeaker
 
     // Introduce a brief delay before retrying initialization
     delay(1000);
@@ -613,6 +615,8 @@ void askHusky()
       // Serial.println(huskySaw);
       stopTheCarThroughLens = true;
       stopCar();
+
+      // PlaySoundOnSpeaker
 
       break;
 
@@ -745,7 +749,7 @@ enum Face
 
   No_face, // no need
   Divyum,  // me
-  Face_2,  // other
+  Rob,  // other
   Face_3,  // other
   Face_4,  // other
   Face_5,  // other
@@ -766,7 +770,7 @@ void huskyLensLogin()
   while (!login)
   {
 
-    PlaySoundOnSpeaker(Sound2);
+    // PlaySoundOnSpeaker
 
     // Check if HuskyLens is ready and a face is learned and available
     if (huskylens.request() && huskylens.isLearned() && huskylens.available())
@@ -790,11 +794,22 @@ void huskyLensLogin()
         Serial.println("Please follow the driving rules!");
         Serial.println("Please switch the HuskyLens to tag recognition mode!");
 
-        PlaySoundOnSpeaker(Sound3);
+        PlaySoundOnSpeaker(IDAccepted);
 
         break;
 
-      case Face_2:
+      case Rob:
+
+        // Set login flag to true
+        login = true;
+
+        // Display welcome message and instructions
+        Serial.println("Welcome Rob Murphy!");
+        Serial.println("Enjoy your Drive!");
+        Serial.println("Please follow the driving rules!");
+        Serial.println("Please switch the HuskyLens to tag recognition mode!");
+
+        PlaySoundOnSpeaker(IDAccepted);
 
         break;
 
@@ -819,12 +834,12 @@ void huskyLensLogin()
         // Notify user that the recognized face is not authorized
         Serial.println("Face Not Recognised, Please go away!");
 
-        PlaySoundOnSpeaker(Sound4);
+        // PlaySoundOnSpeaker
 
         matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
 
         // Delay to avoid continuous processing
-        delay(500);
+        delay(100);
 
         break;
       }
@@ -908,7 +923,7 @@ void connectClient()
     // used for debugging purposes to indicate that the program is still attempting to establish a connection
     Serial.print("-");
 
-    PlaySoundOnSpeaker(Sound2);
+    // PlaySoundOnSpeaker
 
     // This line introduces a delay of 100 milliseconds.
     // It's a common practice to add a delay when waiting for a connection attempt to prevent
@@ -917,7 +932,7 @@ void connectClient()
     delay(200);
   }
 
-  PlaySoundOnSpeaker(Sound3);
+  // PlaySoundOnSpeaker 
 }
 
 // Check client connection
@@ -962,6 +977,10 @@ void checkServer()
     StopTheCarThroughGUI = true;
 
     stopCar();
+
+      PlaySoundOnSpeaker(GUIstop);
+
+    // PlaySoundOnSpeaker
 
     break;
 
@@ -1062,7 +1081,7 @@ void sendMessageCSV()
                "," + String(huskySaw) +
                "," + String(lastTagSeen) +
                "," + String(leftIRSensorSwitchedOnByLens) +
-               "," + String(rightIRSensorSwitchedOnByLens) + 
+               "," + String(rightIRSensorSwitchedOnByLens) +
                " \n ";
 
   // Write the constructed CSV message to the Processing client
@@ -1222,7 +1241,7 @@ double closestObstacleUsingSonar()
  *
  * This function is responsible for determining the position of the object relative to the current position.
  * It sends a pulse to the ultrasonic sensor to measure the distance to the nearest obstacle.
- * This distance is then used to determine the position of the object whuile following the object.
+ * This distance is then used to determine the speed of the car while following the object.
  * The function also checks if the object is too close to the vehicle and stops the vehicle if necessary.
  * It performs the necessary calculations and updates the necessary variables.
  * It also switches the mode to MODE_1_Object_Following if the object is too close.
@@ -1248,6 +1267,11 @@ void checkPositionRelativeToObject()
 
     stopCar();
 
+    PlaySoundOnSpeaker(ObjectDetected);
+
+
+    // PlaySoundOnSpeaker
+
     return;
   }
   else
@@ -1265,11 +1289,13 @@ void checkPositionRelativeToObject()
   {
 
     currentMode = MODE_1_Object_Following;
+
   }
   else
   {
 
     currentMode = setMode;
+    
   }
 
   // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostCmS));
@@ -1600,6 +1626,8 @@ void moveITmaybe()
   }
   else if (!StopTheCarThroughGUI && !stopTheCarThroughLens) // obstacleTooClose &&
   {
+    
+    // PlaySoundOnSpeaker     
 
     delayMicroseconds(3000);
 
@@ -1664,7 +1692,7 @@ void initialiseStuff()
 void setup()
 {
 
-  Serial.begin(115200); // Initialize Serial communication with a baud rate of 115200
+  Serial.begin(9600); // Initialize Serial communication with a baud rate of 9600
 
   Serial.println(".");
   Serial.println(".");
@@ -1679,8 +1707,6 @@ void setup()
   initialiseStuff();
 
   matrix.loadFrame(LEDMATRIX_BOOTLOADER_ON);
-
-  delay(5000);
 
   // Setup Connection
 
@@ -1788,7 +1814,7 @@ void setup()
 
   Serial.println("Happy Driving!");
 
-  PlaySoundOnSpeaker(Sound1); // Stop the PlaySoundOnSpeaker
+  // PlaySoundOnSpeaker
 }
 
 // Main execution loop function that runs continuously after setup
