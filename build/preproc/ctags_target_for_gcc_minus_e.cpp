@@ -48,11 +48,6 @@
 // Include the library for setting up Wire
 # 40 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino" 2
 
-// Inculde the library for Talkie in order to set up the speaker
-// #include "Talkie.h"
-// #include "Vocab_US_Large.h"
-// Talkie voice;
-
 // Variables
 
 // Pin Definitions
@@ -84,7 +79,7 @@ const int SpeakerPin = 6; // Pin for Speaker
  * @note The value of this variable should be set to one of the predefined switch pin numbers, such as RightMotorSwitch1, RightMotorSwitch2, etc.
 
  */
-# 71 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 66 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 int RightMotorSwitchActive = RightMotorSwitch1; // Active Switch for right motor
 int LeftMotorSwitchActive = LeftMotorSwitch3; // Active Switch for Left motor
 
@@ -145,7 +140,7 @@ const int quantisation_level = 20;
  *
 
  */
-# 127 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 122 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 enum MusicFile
 {
 
@@ -187,11 +182,16 @@ enum MusicFile
  * @param command The sound command to be played.
 
  */
-# 158 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 153 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void PlaySoundOnSpeaker(MusicFile command)
 {
   // Play the sound on the speaker
   analogWrite(SpeakerPin, int(command));
+
+  delay(5000); // Delay to allow the sound to play
+
+  // Stop the sound
+  analogWrite(SpeakerPin, 0);
 }
 
 // Define Matrix
@@ -751,6 +751,8 @@ void askHusky()
       stopTheCarThroughLens = true;
       stopCar();
 
+      // PlaySoundOnSpeaker
+
       break;
 
     case TAG_3_heart:
@@ -899,7 +901,7 @@ enum Face
  * @return void
 
  */
-# 761 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 763 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void huskyLensLogin()
 {
   bool login = false; // Flag to indicate whether login is successful
@@ -1008,7 +1010,7 @@ char data;
  * It should be called once at the beginning of the program.
 
  */
-# 865 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 867 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void connectionSetup()
 {
 
@@ -1053,7 +1055,7 @@ void connectionSetup()
  * @return void
 
  */
-# 899 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 901 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void connectClient()
 {
 
@@ -1098,7 +1100,7 @@ void connectClient()
  * @note This function assumes that the WebClient has been initialized and is connected to a server.
 
  */
-# 934 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 936 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void checkServer()
 {
 
@@ -1130,6 +1132,8 @@ void checkServer()
     StopTheCarThroughGUI = true;
 
     stopCar();
+
+    // PlaySoundOnSpeaker
 
     break;
 
@@ -1231,7 +1235,7 @@ void checkServer()
  * @return None
 
  */
-# 1051 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1055 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void sendMessageCSV()
 {
 
@@ -1266,7 +1270,7 @@ void sendMessageCSV()
  * Unused in the current implementation.
 
  */
-# 1081 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1085 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void sendMessage()
 {
   /*
@@ -1282,7 +1286,7 @@ void sendMessage()
 
 
     */
-# 1091 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1095 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
   /*
 
     message = "Distance travelled: " + String(int((leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution))
@@ -1302,7 +1306,7 @@ void sendMessage()
               + " Current mode: " + ((currentMode == MODE_1_Object_Following) ? "Mode1 \n" : "Mode2URL \n");
 
     */
-# 1102 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1106 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
   /*
 
     message[0] = int(distanceTravelledByTheCar);
@@ -1320,7 +1324,7 @@ void sendMessage()
     WebClient.write(message, sizeof(message));
 
     */
-# 1111 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1115 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 }
 
 // Matrix Handling
@@ -1364,7 +1368,7 @@ const uint32_t W5[4] = {
  * The smiley face pattern is loaded onto the matrix using the loadFrame() function.
 
  */
-# 1152 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1156 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 // Function to display a smiley pattern on the LED matrix
 void displaySmiley()
 {
@@ -1409,7 +1413,7 @@ void displayW5()
  * @return The distance to the closest obstacle in meters.
 
  */
-# 1192 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1196 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 double closestObstacleUsingSonar()
 {
 
@@ -1448,7 +1452,7 @@ double closestObstacleUsingSonar()
 
  * It sends a pulse to the ultrasonic sensor to measure the distance to the nearest obstacle.
 
- * This distance is then used to determine the position of the object whuile following the object.
+ * This distance is then used to determine the speed of the car while following the object.
 
  * The function also checks if the object is too close to the vehicle and stops the vehicle if necessary.
 
@@ -1463,7 +1467,7 @@ double closestObstacleUsingSonar()
  * @return void
 
  */
-# 1233 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1237 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void checkPositionRelativeToObject()
 {
 
@@ -1482,6 +1486,8 @@ void checkPositionRelativeToObject()
 
     stopCar();
 
+    // PlaySoundOnSpeaker
+
     return;
   }
   else
@@ -1499,11 +1505,13 @@ void checkPositionRelativeToObject()
   {
 
     currentMode = MODE_1_Object_Following;
+
   }
   else
   {
 
     currentMode = setMode;
+
   }
 
   // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostCmS));
@@ -1523,7 +1531,7 @@ void checkPositionRelativeToObject()
  * based on the readings of the husky lens, it can turn left or right on a forked path.
 
  */
-# 1286 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1294 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void keepMovingCheckingIRSensors()
 {
 
@@ -1599,7 +1607,7 @@ inline int mapSpeedCmSToPWM(double speed);
  * @return The mapped PWM value.
 
  */
-# 1356 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1364 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 inline int mapSpeedCmSToPWM(double speed)
 {
 
@@ -1628,7 +1636,7 @@ inline int mapSpeedCmSToPWM(double speed)
  * @param speed The speed at which the vehicle should move forward.
 
  */
-# 1380 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1388 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void moveForwardatSpeed(double speed)
 {
 
@@ -1660,7 +1668,7 @@ void moveForwardatSpeed(double speed)
  * Stops the car.
 
  */
-# 1409 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1417 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void stopCar()
 {
 
@@ -1693,7 +1701,7 @@ void stopCar()
  * This function is responsible for turning the autonomous vehicle to the left.
 
  */
-# 1437 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1445 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void turnLeft()
 {
 
@@ -1730,7 +1738,7 @@ void turnLeft()
  * This function is responsible for turning the autonomous vehicle to the right.
 
  */
-# 1469 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1477 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void turnRight()
 {
 
@@ -1774,7 +1782,7 @@ void turnRight()
  *        If the loop counter is a multiple of 700, it calculates the distance travelled by the car, calculates the speed, sends a message in CSV format, and resets the loop counter.
 
  */
-# 1505 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1513 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void decideTheCarsStatus()
 {
 
@@ -1872,7 +1880,7 @@ void decideTheCarsStatus()
  *
 
  */
-# 1590 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1598 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void moveITmaybe()
 {
 
@@ -1886,6 +1894,8 @@ void moveITmaybe()
   }
   else if (!StopTheCarThroughGUI && !stopTheCarThroughLens) // obstacleTooClose &&
   {
+
+    // PlaySoundOnSpeaker     
 
     delayMicroseconds(3000);
 
@@ -1910,7 +1920,7 @@ void moveITmaybe()
  * @return void
 
  */
-# 1620 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1630 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void initialiseStuff()
 {
 
@@ -1961,7 +1971,7 @@ void initialiseStuff()
  * other necessary setup tasks. After the setup is completed, the Arduino is ready to execute the main loop.
 
  */
-# 1664 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1674 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void setup()
 {
 
@@ -2089,7 +2099,7 @@ void setup()
 
   _UART1_.println("Happy Driving!");
 
-  PlaySoundOnSpeaker(Sound1); // Stop the PlaySoundOnSpeaker
+  PlaySoundOnSpeaker(NoSoundToBePlayed); // Stop the PlaySoundOnSpeaker
 }
 
 // Main execution loop function that runs continuously after setup
@@ -2106,7 +2116,7 @@ void setup()
  * It also increments the loop counter for each iteration.
 
  */
-# 1803 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1813 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void loop()
 {
   // Delegate the primary control logic
