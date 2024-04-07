@@ -175,7 +175,7 @@ void calculateSpeed() {
 
 // Define PID constants
 const double Kp_f_1 = 0.5;            // Proportional gain
-long const double Ki_f_1 = 0.0000025; // Integral gain
+const double Ki_f_1 = 0.0000025; // Integral gain
 const double Kd_f_1 = 200;            // Derivative gain
 
 // Define variables
