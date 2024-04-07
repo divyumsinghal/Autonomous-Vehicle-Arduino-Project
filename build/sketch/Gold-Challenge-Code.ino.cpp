@@ -25,6 +25,9 @@
 #define Mode0URL 'A'
 #define Mode2URL 'C'
 
+#define TurnAroundURL 'T'
+#define FreeBirdURL 'F'
+
 // Target Speed is send as an integer in ASCII
 
 // Include the library for handling the LED matrix
@@ -68,6 +71,8 @@ const int SpeakerPin = 6;             // Pin for Speaker
 int RightMotorSwitchActive = RightMotorSwitch1; // Active Switch for right motor
 int LeftMotorSwitchActive = LeftMotorSwitch3;   // Active Switch for Left motor
 
+int RightMotorBack = RightMotorSwitch2;
+
 // Defining encoders
 const int RightEncoder = 3;                 // Digital pin for the right motor encoder
 const int LeftEncoder = 2;                  // Digital pin for the left motor encoder
@@ -80,7 +85,7 @@ const double LeftWheelCoefficient = 1;         // Coefficient for adjusting left
 const double MinSpeedCmS = 0;                  // Minimum speed CmS for the car
 const double MaxSpeedCmS = 50;                 // Maximum speed CmS for the car
 const int PWMMin = 0;                          // Minimum PWM value
-const int PWMMax = 130;                        // Maximum PWM value (capping it instead of 255)
+const int PWMMax = 160;                        // Maximum PWM value (capping it instead of 255)
 const int Black = HIGH;                        // Black color for the Ir sensor
 const int White = LOW;                         // White color for the Ir sensor
 const int EncoderPulsesPerRevolution = 4;      // Encoder generates 8 pulses per revolution -> 4 rising are tracked
@@ -103,15 +108,15 @@ double targetSpeedCmS_MODE_2_Speed_Control_PID = MaxSpeedCmS; // Speed to reach 
 double targetSpeed_MODE_0_Speed_Set_by_Lens = MaxSpeedCmS;    // Speed to reach in mode 0
 bool leftIRSensorSwitchedOnByLens = false;                    // Switch on or off IR sensors using husky lens
 bool rightIRSensorSwitchedOnByLens = true;                    // Switch on or off IR sensors using husky lens
-int turnSpeedOuterPulseWidth = 115;                           // Turning speed for outer wheel
+int turnSpeedOuterPulseWidth = 135;                           // Turning speed for outer wheel
 int turnSpeedInnerPulseWidth = 30;                            // Turning speed for inner wheel
-int nearWidthThreshold = 40;                                  // Threshold for near width for checking the last tag seen by husky lens
-int nearHeightThreshold = 40;                                 // Threshold for near height for checking the last tag seen by husky lens
+int nearWidthThreshold = 20;                                  // Threshold for near width for checking the last tag seen by husky lens
+int nearHeightThreshold = 20;                                 // Threshold for near height for checking the last tag seen by husky lens
 
 // MusicFile
 
-const int base = 10;
-const int quantisation_level = 20;
+const int base = 0;
+const int quantisation_level = 50;
 
 // Define an enumeration for sounds
 /**
@@ -124,19 +129,13 @@ const int quantisation_level = 20;
 enum MusicFile
 {
 
-  NoSoundToBePlayed = 0,
-  Sound1 = base + quantisation_level,
-  Sound2 = base + 2 * quantisation_level,
-  Sound3 = base + 3 * quantisation_level,
-  Sound4 = base + 4 * quantisation_level,
-  Sound5 = base + 5 * quantisation_level,
-  Sound6 = base + 6 * quantisation_level,
-  Sound7 = base + 7 * quantisation_level,
-  Sound8 = base + 8 * quantisation_level,
-  Sound9 = base + 9 * quantisation_level,
-  Sound10 = base + 10 * quantisation_level,
-  Sound11 = base + 11 * quantisation_level,
-  Sound12 = 255
+  NoSoundToBePlayed = 5,
+  IDAccepted = 25,
+  ObjectDetected = 50,
+  GUIstop = 100,
+  SignSTop = 150,
+  Right = 200,
+  Left = 250
 
 };
 
@@ -152,72 +151,73 @@ enum MusicFile
  *
  * @param command The sound command to be played.
  */
-#line 153 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 152 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void PlaySoundOnSpeaker(MusicFile command);
-#line 216 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 212 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void calculateSpeed();
-#line 310 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 306 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 double PIDObjectFollowing_f_1();
-#line 383 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 379 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 double PIDMaintainSpeed_sc_2();
-#line 474 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 468 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void huskyLensSetup();
-#line 504 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 502 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void printResult(HUSKYLENSResult result);
-#line 579 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 577 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void askHusky();
-#line 763 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 765 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void huskyLensLogin();
-#line 867 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 922 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void connectionSetup();
-#line 901 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 956 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void connectClient();
-#line 936 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 991 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void checkServer();
-#line 1055 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1124 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void sendMessageCSV();
-#line 1085 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1154 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void sendMessage();
-#line 1157 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1226 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void displaySmiley();
-#line 1169 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1238 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void displayHeart();
-#line 1180 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1249 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void displayW5();
-#line 1196 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1265 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 double closestObstacleUsingSonar();
-#line 1237 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1306 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void checkPositionRelativeToObject();
-#line 1294 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1363 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void keepMovingCheckingIRSensors();
-#line 1388 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1457 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void moveForwardatSpeed(double speed);
-#line 1417 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1486 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void stopCar();
-#line 1445 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1514 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void turnLeft();
-#line 1477 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1546 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void turnRight();
-#line 1513 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1579 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+void turningAround();
+#line 1606 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+void freeBird();
+#line 1668 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void decideTheCarsStatus();
-#line 1598 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1756 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void moveITmaybe();
-#line 1630 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1788 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void initialiseStuff();
-#line 1674 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1833 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void setup();
-#line 1813 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 1971 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void loop();
-#line 153 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+#line 152 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void PlaySoundOnSpeaker(MusicFile command)
 {
   // Play the sound on the speaker
   analogWrite(SpeakerPin, int(command));
 
-  delay(5000); // Delay to allow the sound to play
-
-  // Stop the sound
-  analogWrite(SpeakerPin, 0);
+  // Serial.println(int(command));
 }
 
 // Define Matrix
@@ -326,9 +326,9 @@ void calculateSpeed()
 
 // Define PID constants for object following
 
-const double Kp_f_1 = 0.5;            // Proportional gain
-long const double Ki_f_1 = 0.0000025; // Integral gain
-const double Kd_f_1 = 200;            // Derivative gain
+const double Kp_f_1 = 0.5;       // Proportional gain
+const double Ki_f_1 = 0.0000025; // Integral gain
+const double Kd_f_1 = 200;       // Derivative gain
 
 // Define variables
 double error_f_1 = 0;         // Current error
@@ -525,8 +525,6 @@ TAG lastTagSeen = TAG_0;
  * @note Make sure to connect the HuskyLens module to the appropriate pins on the Arduino
  * board before calling this function.
  *
- * @see huskyLensReadData()
- * @see huskyLensSendCommand()
  *
  * @return void
  */
@@ -547,16 +545,20 @@ void huskyLensSetup()
     Serial.println(F("1. Please recheck the \"Protocol Type\" in HUSKYLENS (General Settings>>Protocol Type>>I2C)"));
     Serial.println(F("2. Please recheck the connection."));
 
-    PlaySoundOnSpeaker(Sound2);
+    // PlaySoundOnSpeaker
 
     // Introduce a brief delay before retrying initialization
     delay(1000);
   }
 
+  /*
+
   if (!huskylens.isLearned())
   {
     Serial.println("Nothing learned, teach me first !");
   }
+
+  */
 }
 
 // Take a huskylens result and print out the x/y coordinates and other useful properties.
@@ -673,7 +675,7 @@ void askHusky()
       stopTheCarThroughLens = true;
       stopCar();
 
-      // PlaySoundOnSpeaker
+      PlaySoundOnSpeaker(SignSTop);
 
       break;
 
@@ -706,6 +708,8 @@ void askHusky()
       leftIRSensorSwitchedOnByLens = true;
       rightIRSensorSwitchedOnByLens = false;
 
+      PlaySoundOnSpeaker(Left);
+
       break;
 
     case TAG_7_Turn_Right:
@@ -715,6 +719,8 @@ void askHusky()
 
       leftIRSensorSwitchedOnByLens = false;
       rightIRSensorSwitchedOnByLens = true;
+
+      PlaySoundOnSpeaker(Right);
 
       break;
 
@@ -806,7 +812,7 @@ enum Face
 
   No_face, // no need
   Divyum,  // me
-  Face_2,  // other
+  Rob,     // other
   Face_3,  // other
   Face_4,  // other
   Face_5,  // other
@@ -827,7 +833,7 @@ void huskyLensLogin()
   while (!login)
   {
 
-    PlaySoundOnSpeaker(Sound2);
+    // PlaySoundOnSpeaker
 
     // Check if HuskyLens is ready and a face is learned and available
     if (huskylens.request() && huskylens.isLearned() && huskylens.available())
@@ -851,27 +857,82 @@ void huskyLensLogin()
         Serial.println("Please follow the driving rules!");
         Serial.println("Please switch the HuskyLens to tag recognition mode!");
 
-        PlaySoundOnSpeaker(Sound3);
+        PlaySoundOnSpeaker(IDAccepted);
 
         break;
 
-      case Face_2:
+      case Rob:
+
+        // Set login flag to true
+        login = true;
+
+        // Display welcome message and instructions
+        Serial.println("Welcome Rob Murphy!");
+        Serial.println("Enjoy your Drive!");
+        Serial.println("Please follow the driving rules!");
+        Serial.println("Please switch the HuskyLens to tag recognition mode!");
+
+        PlaySoundOnSpeaker(IDAccepted);
 
         break;
 
       case Face_3:
 
+        // Set login flag to true
+        login = true;
+
+        // Display welcome message and instructions
+        Serial.println("Welcome User 3!");
+        Serial.println("Enjoy your Drive!");
+        Serial.println("Please follow the driving rules!");
+        Serial.println("Please switch the HuskyLens to tag recognition mode!");
+
+        PlaySoundOnSpeaker(IDAccepted);
+
         break;
 
       case Face_4:
+
+        // Set login flag to true
+        login = true;
+
+        // Display welcome message and instructions
+        Serial.println("Welcome User 4!");
+        Serial.println("Enjoy your Drive!");
+        Serial.println("Please follow the driving rules!");
+        Serial.println("Please switch the HuskyLens to tag recognition mode!");
+
+        PlaySoundOnSpeaker(IDAccepted);
 
         break;
 
       case Face_5:
 
+        // Set login flag to true
+        login = true;
+
+        // Display welcome message and instructions
+        Serial.println("Welcome User 5!");
+        Serial.println("Enjoy your Drive!");
+        Serial.println("Please follow the driving rules!");
+        Serial.println("Please switch the HuskyLens to tag recognition mode!");
+
+        PlaySoundOnSpeaker(IDAccepted);
+
         break;
 
       case Face_6:
+
+        // Set login flag to true
+        login = true;
+
+        // Display welcome message and instructions
+        Serial.println("Welcome User 6!");
+        Serial.println("Enjoy your Drive!");
+        Serial.println("Please follow the driving rules!");
+        Serial.println("Please switch the HuskyLens to tag recognition mode!");
+
+        PlaySoundOnSpeaker(IDAccepted);
 
         break;
 
@@ -880,12 +941,10 @@ void huskyLensLogin()
         // Notify user that the recognized face is not authorized
         Serial.println("Face Not Recognised, Please go away!");
 
-        PlaySoundOnSpeaker(Sound4);
-
-        matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
+        // PlaySoundOnSpeaker
 
         // Delay to avoid continuous processing
-        delay(500);
+        delay(100);
 
         break;
       }
@@ -969,7 +1028,7 @@ void connectClient()
     // used for debugging purposes to indicate that the program is still attempting to establish a connection
     Serial.print("-");
 
-    PlaySoundOnSpeaker(Sound2);
+    // PlaySoundOnSpeaker
 
     // This line introduces a delay of 100 milliseconds.
     // It's a common practice to add a delay when waiting for a connection attempt to prevent
@@ -978,7 +1037,7 @@ void connectClient()
     delay(200);
   }
 
-  PlaySoundOnSpeaker(Sound3);
+  // PlaySoundOnSpeaker
 }
 
 // Check client connection
@@ -1002,7 +1061,7 @@ void checkServer()
 
   data = WebClient.read();
 
-  //  Serial.print(data);
+  // Serial.print(data);
 
   switch (data)
   {
@@ -1023,6 +1082,8 @@ void checkServer()
     StopTheCarThroughGUI = true;
 
     stopCar();
+
+    PlaySoundOnSpeaker(GUIstop);
 
     // PlaySoundOnSpeaker
 
@@ -1064,6 +1125,18 @@ void checkServer()
 
     break;
 
+  case TurnAroundURL:
+
+    turningAround();
+
+    break;
+
+  case FreeBirdURL:
+
+    freeBird();
+
+    break;
+
   default:
     // Handle speed Command
 
@@ -1074,7 +1147,7 @@ void checkServer()
     {
 
       // Calculate the desired speed based on the received data
-      // data - '0' converts from ASCII to integer, then add 1 and multiply by 3
+      // data - '0' converts from ASCII to integer, then add 1 and multiply by 5
       int setSpeed = (data - '0' + 1) * 5;
 
       // Check if the calculated speed is within acceptable range
@@ -1311,6 +1384,8 @@ void checkPositionRelativeToObject()
 
     stopCar();
 
+    PlaySoundOnSpeaker(ObjectDetected);
+
     // PlaySoundOnSpeaker
 
     return;
@@ -1330,13 +1405,11 @@ void checkPositionRelativeToObject()
   {
 
     currentMode = MODE_1_Object_Following;
-
   }
   else
   {
 
     currentMode = setMode;
-    
   }
 
   // Serial.println("Inside Object Tracking, changing speed to: " + String(carSpeedAlmostCmS));
@@ -1359,8 +1432,8 @@ void keepMovingCheckingIRSensors()
   int irRightValue = digitalRead(RightIRSensorInput);
 
   // Move straight for debugging
-  // int irLeftValue = LOW;
-  // int irRightValue = LOW;
+  // int irLeftValue = Black;
+  // int irRightValue = Black;
 
   // Serial.print("irLeftValue: ");
   // Serial.println(irLeftValue);
@@ -1559,6 +1632,92 @@ void turnRight()
   digitalWrite(LeftMotorSwitchActive, HIGH);
 }
 
+/**
+ * Function: turningAround
+ * ----------------------
+ * This function is responsible for making the autonomous vehicle turn around.
+ * It sets the motor switches and coefficients to control the movement of the wheels.
+ * The function then activates the motors to turn the vehicle around for a duration of 300 milliseconds.
+ */
+void turningAround()
+{
+
+  digitalWrite(RightMotorSwitch1, LOW);
+  digitalWrite(RightMotorSwitch2, LOW);
+  digitalWrite(LeftMotorSwitch3, LOW);
+  digitalWrite(LeftMotorSwitch4, LOW);
+
+  analogWrite(
+      RightMotorPWM,
+      RightWheelCoefficient * 100);
+
+  analogWrite(
+      LeftMotorPWM,
+      LeftWheelCoefficient * 100);
+
+  digitalWrite(RightMotorBack, HIGH);
+  digitalWrite(LeftMotorSwitchActive, HIGH);
+
+  delay(2000);
+
+  digitalWrite(RightMotorSwitch1, LOW);
+  digitalWrite(RightMotorSwitch2, LOW);
+  digitalWrite(LeftMotorSwitch3, LOW);
+  digitalWrite(LeftMotorSwitch4, LOW);
+}
+
+void freeBird()
+{
+
+  for (unsigned long long i = 0; i < 10000000000; i++)
+  {
+
+    digitalWrite(RightMotorSwitchActive, HIGH);
+    digitalWrite(LeftMotorSwitchActive, HIGH);
+
+    nearestObstacleDistance = closestObstacleUsingSonar();
+
+    if (nearestObstacleDistance <= 30)
+    {
+
+      if ((i < 500) || (1000 < i < 1500) || (2000 < i < 2500) || (3000 < i < 3500) || (4000 < i < 4500) || (5000 < i < 5500) || (6000 < i < 6500) || (7000 < i < 7500) || (8000 < i < 8500) || (9000 < i < 9500))
+      {
+        analogWrite(
+            RightMotorPWM,
+            RightWheelCoefficient * 255);
+
+        // Adjust the left motor PWM for a right turn
+        analogWrite(
+            LeftMotorPWM,
+            LeftWheelCoefficient * 0);
+      }
+
+      else
+      {
+        analogWrite(
+            RightMotorPWM,
+            RightWheelCoefficient * 0);
+
+        // Adjust the left motor PWM for a right turn
+        analogWrite(
+            LeftMotorPWM,
+            LeftWheelCoefficient * 255);
+      }
+    }
+    else
+    {
+      analogWrite(
+          RightMotorPWM,
+          mapSpeedCmSToPWM(RightWheelCoefficient * 255));
+
+      // Adjust left motor PWM based on the left wheel coefficient
+      analogWrite(
+          LeftMotorPWM,
+          mapSpeedCmSToPWM(LeftWheelCoefficient * 255));
+    }
+  }
+}
+
 // decideTheCarsStatus
 
 /**
@@ -1636,6 +1795,9 @@ void decideTheCarsStatus()
     // reset the integrals
     integral_sc_2 /= 50;
     integral_f_1 /= 50;
+
+    // Stop the sound
+    analogWrite(SpeakerPin, NoSoundToBePlayed);
   }
 }
 
@@ -1667,8 +1829,8 @@ void moveITmaybe()
   }
   else if (!StopTheCarThroughGUI && !stopTheCarThroughLens) // obstacleTooClose &&
   {
-    
-    // PlaySoundOnSpeaker     
+
+    // PlaySoundOnSpeaker
 
     delayMicroseconds(3000);
 
@@ -1715,6 +1877,7 @@ void initialiseStuff()
                                        // & logic inversion (a 20 k resistor in parallel for impedence control)
 
   pinMode(SpeakerPin, OUTPUT); // Set the speaker pin as an output
+  analogWrite(SpeakerPin, NoSoundToBePlayed);
 
   // Initialize the LED matrix for further use
   matrix.begin();
@@ -1733,7 +1896,7 @@ void initialiseStuff()
 void setup()
 {
 
-  Serial.begin(115200); // Initialize Serial communication with a baud rate of 115200
+  Serial.begin(9600); // Initialize Serial communication with a baud rate of 9600
 
   Serial.println(".");
   Serial.println(".");
@@ -1748,8 +1911,6 @@ void setup()
   initialiseStuff();
 
   matrix.loadFrame(LEDMATRIX_BOOTLOADER_ON);
-
-  delay(5000);
 
   // Setup Connection
 
@@ -1775,14 +1936,14 @@ void setup()
 
       digitalPinToInterrupt(RightEncoder), []()
       {
-      // Increment the pulse count for the right encoder
-      rightPulseCount++;
+        // Increment the pulse count for the right encoder
+        rightPulseCount++;
 
-      // Update the previous time to the current time
-      rightTimePrev = rightTimeCurrent;
+        // Update the previous time to the current time
+        rightTimePrev = rightTimeCurrent;
 
-      // Update the current time
-      rightTimeCurrent = millis(); },
+        // Update the current time
+        rightTimeCurrent = millis(); },
 
       RISING);
 
@@ -1794,14 +1955,14 @@ void setup()
 
       digitalPinToInterrupt(LeftEncoder), []()
       {
-      // Increment the pulse count for the left encoder
-      leftPulseCount++;
+        // Increment the pulse count for the left encoder
+        leftPulseCount++;
 
-      // Update the previous time to the current time
-      leftTimePrev = leftTimeCurrent;
+        // Update the previous time to the current time
+        leftTimePrev = leftTimeCurrent;
 
-      // Update the current time
-      leftTimeCurrent = millis(); },
+        // Update the current time
+        leftTimeCurrent = millis(); },
 
       RISING);
 
@@ -1828,13 +1989,13 @@ void setup()
   Serial.println("Connected to Client!");
   Serial.println("Connected to Client!");
 
+  matrix.loadFrame(LEDMATRIX_LIKE);
+
   Serial.println("Setting up Husky Lens!");
 
   huskyLensSetup();
 
   Serial.println("Husky Lens is Setup!");
-
-  matrix.loadFrame(LEDMATRIX_LIKE);
 
   delay(5000);
 
@@ -1843,11 +2004,12 @@ void setup()
   // matrix.endDraw();
 
   // matrix.loadWrapper(LEDMATRIX_ANIMATION_LOCK, sizeof(LEDMATRIX_ANIMATION_LOCK) / sizeof(LEDMATRIX_ANIMATION_LOCK[0]));
+
   // matrix.play();
 
-  matrix.loadFrame(LEDMATRIX_EMOJI_SAD);
+  matrix.loadFrame(LEDMATRIX_EMOJI_BASIC);
 
-  Serial.println("Please Login!");
+  // Serial.println("Please Login!");
 
   huskyLensLogin();
 
@@ -1857,7 +2019,7 @@ void setup()
 
   Serial.println("Happy Driving!");
 
-  PlaySoundOnSpeaker(NoSoundToBePlayed); // Stop the PlaySoundOnSpeaker
+  // PlaySoundOnSpeaker
 }
 
 // Main execution loop function that runs continuously after setup

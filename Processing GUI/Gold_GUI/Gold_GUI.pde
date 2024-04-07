@@ -1,6 +1,17 @@
 import processing.net.*;
 import controlP5.*;
 import meter.*;
+import processing.sound.*;
+import gifAnimation.*;
+
+Gif gif;
+
+SoundFile file;
+file = new SoundFile(this, "ACDC.mp3");
+
+boolean played = false;
+
+// Sound play;
 
 String serverAddress = "192.168.4.1";
 Client myClient;
@@ -16,6 +27,8 @@ char displaySmileyURL = 'S';
 char displayW5URL = 'W';
 char mode0URL = 'A';
 char mode2URL = 'C';
+char turnAroundURL = 'T';
+char FreeBirdURL = 'F';
 
 boolean StopStart = false;
 boolean SwitchModes = false;
@@ -37,8 +50,14 @@ String[] values;
 String message = "0,0,0,0,0,0";
 
 void setup() {
+
   myClient = new Client(this, serverAddress, 5200);
+
   size(1200, 1100);
+
+  gif = new Gif(this, "freedom.gif");
+  gif.play();
+
   cp5 = new ControlP5(this);
 
   int buttonX = 100;
@@ -84,10 +103,22 @@ void setup() {
     .setLabel("Display W5")
     .getCaptionLabel().setFont(createFont("Arial", 46));
 
+  cp5.addButton("TurnAround")
+    .setPosition(buttonX, buttonY + 5 *  buttonSpacing)
+    .setSize(buttonWidth, buttonHeight)
+    .setLabel("Turn Around")
+    .getCaptionLabel().setFont(createFont("Arial", 30));
+
+  cp5.addButton("FreeBird")
+    .setPosition(buttonX, buttonY + 6 *  buttonSpacing)
+    .setSize(buttonWidth, buttonHeight)
+    .setLabel("Free Bird")
+    .getCaptionLabel().setFont(createFont("Arial", 30));
+
   slide = cp5.addSlider("SpeedControl")
     .setRange(1, 10)
     .setValue(10)
-    .setPosition(buttonX - 35, buttonY + 5 * buttonSpacing)
+    .setPosition(buttonX - 35, buttonY + 7 * buttonSpacing)
     .setSize(370, 50)
     .setNumberOfTickMarks(10)
     .setSliderMode(Slider.FIX)
@@ -109,6 +140,7 @@ void setup() {
 }
 
 void draw() {
+
   background(0);
   String valueLabel = String.valueOf((int)(slide.getValue() * 5));
   slide.getValueLabel().setText(valueLabel);
@@ -131,7 +163,7 @@ void draw() {
   }
 
   text("Mode: " + ModeName, 500, 300);
-  
+
   text("Speed percentage of PWM Signal: " + SpeedPWMpercent, 500, 800);
 
   text("Tag read: " + TagReadFromServer, 500, 850);
@@ -145,32 +177,126 @@ void draw() {
 
 void StopStart(boolean theFlag) {
   if (theFlag) {
+
     sendCommand(startURL);
+
     cp5.setColorBackground(color(0, 255, 0));
+
+    if (file != null) {
+      file.stop();
+    }
+
+    // file.pause();
+
+    file = new SoundFile(this, "ACDC.mp3");
+    file.loop();
   } else {
+
     sendCommand(stopURL);
     cp5.setColorBackground(color(255, 0, 0));
+
+    if (file != null) {
+      file.stop();
+    }
+
+    // file.pause();
   }
 }
 
 void SwitchModes(boolean theFlag) {
   if (theFlag) {
+
     sendCommand(mode2URL);
+
+    if (file != null) {
+      file.stop();
+    }
+    // file.pause();
+
+    file = new SoundFile(this, "Run.mp3");
+    file.loop();
+
+    played = true;
   } else {
+
     sendCommand(mode0URL);
+
+    if (file != null) {
+      file.stop();
+    }
+    // file.pause();
+
+    if (played) {
+      file = new SoundFile(this, "Eye.mp3");
+      file.loop();
+    }
   }
 }
 
 void displayHeart() {
   sendCommand(displayHeartURL);
+
+  if (file != null) {
+    file.stop();
+  }
+
+  // file.pause();
+
+  file = new SoundFile(this, "Love.mp3");
+  file.loop();
+}
+
+void TurnAround() {
+  sendCommand(turnAroundURL);
+
+  if (file != null) {
+    file.stop();
+  }
+  // file.pause();
+
+  file = new SoundFile(this, "Turn.mp3");
+  file.loop();
+}
+
+void FreeBird() {
+  sendCommand(FreeBirdURL);
+
+  if (file != null) {
+    file.stop();
+  }
+  // file.pause();
+
+  file = new SoundFile(this, "Free.mp3");
+  file.loop();
+
+  image(gif, 0, 0);
 }
 
 void displaySmiley() {
+
   sendCommand(displaySmileyURL);
+
+  if (file != null) {
+    file.stop();
+  }
+
+  // file.pause();
+
+  file = new SoundFile(this, "Happy.mp3");
+  file.loop();
 }
 
 void displayW5() {
   sendCommand(displayW5URL);
+
+  if (file != null) {
+    file.stop();
+  }
+
+  // file.pause();
+
+  file = new SoundFile(this, "Sweet.mp3");
+  file.loop();
 }
 
 void SpeedControl(int speed) {
