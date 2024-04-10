@@ -7,8 +7,6 @@ import gifAnimation.*;
 Gif gif;
 
 SoundFile file;
-file = new SoundFile(this, "ACDC.mp3");
-
 boolean played = false;
 
 // Sound play;
@@ -44,13 +42,12 @@ String leftIRSensorSwitchedOnByLens = "0";
 String rightIRSensorSwitchedOnByLens = "0";
 String ModeName = "Object Following";
 
-
-
 String[] values;
 String message = "0,0,0,0,0,0";
 
-void setup() {
-
+// Setup function called once at the beginning
+void setup(){
+  
   myClient = new Client(this, serverAddress, 5200);
 
   size(1200, 1100);
@@ -139,6 +136,9 @@ void setup() {
   speedometer.setScaleLabels(scaleLabels);
 }
 
+
+
+
 void draw() {
 
   background(0);
@@ -175,7 +175,8 @@ void draw() {
   speedometer.updateMeter(int(SpeedTravelled));
 }
 
-void StopStart(boolean theFlag) {
+void StopStart(boolean theFlag) 
+{
   if (theFlag) {
 
     sendCommand(startURL);

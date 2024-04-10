@@ -100,7 +100,7 @@ const double LeftWheelCoefficient = 1; // Coefficient for adjusting left wheel s
 const double MinSpeedCmS = 0; // Minimum speed CmS for the car
 const double MaxSpeedCmS = 50; // Maximum speed CmS for the car
 const int PWMMin = 0; // Minimum PWM value
-const int PWMMax = 160; // Maximum PWM value (capping it instead of 255)
+const int PWMMax = 150; // Maximum PWM value (capping it instead of 255)
 const int Black = HIGH; // Black color for the Ir sensor
 const int White = LOW; // White color for the Ir sensor
 const int EncoderPulsesPerRevolution = 4; // Encoder generates 8 pulses per revolution -> 4 rising are tracked
@@ -123,10 +123,10 @@ double targetSpeedCmS_MODE_2_Speed_Control_PID = MaxSpeedCmS; // Speed to reach 
 double targetSpeed_MODE_0_Speed_Set_by_Lens = MaxSpeedCmS; // Speed to reach in mode 0
 bool leftIRSensorSwitchedOnByLens = false; // Switch on or off IR sensors using husky lens
 bool rightIRSensorSwitchedOnByLens = true; // Switch on or off IR sensors using husky lens
-int turnSpeedOuterPulseWidth = 135; // Turning speed for outer wheel
+int turnSpeedOuterPulseWidth = PWMMax; // Turning speed for outer wheel
 int turnSpeedInnerPulseWidth = 30; // Turning speed for inner wheel
-int nearWidthThreshold = 20; // Threshold for near width for checking the last tag seen by husky lens
-int nearHeightThreshold = 20; // Threshold for near height for checking the last tag seen by husky lens
+int nearWidthThreshold = 57; // Threshold for near width for checking the last tag seen by husky lens
+int nearHeightThreshold = 56; // Threshold for near height for checking the last tag seen by husky lens
 
 // MusicFile
 
@@ -511,8 +511,8 @@ enum TAG
   TAG_6_Turn_Left, // Turn Left
   TAG_7_Turn_Right, // Turn Right
   TAG_8_Slow_Down, // Slow Down
-  buffer,
-  TAG_9_Speed_Up // Speed UP
+  TAG_9_Speed_Up, // Speed UP
+
 
 };
 
@@ -729,7 +729,8 @@ void askHusky()
     // my printResult() function to be printed out to the serial port.
     HUSKYLENSResult result = huskylens.read();
 
-    // Print the result to the Serial Monitor fir debigging purposes
+    // Print the result to the Serial Monitor for debigging purposes
+
     // printResult(result);
 
     // Convert the ID to a TAG object and store it in the huskySaw variable
@@ -842,6 +843,7 @@ void askHusky()
 
       break;
 
+
     default:
 
       // Handle unknown command
@@ -864,7 +866,7 @@ void askHusky()
       // change the target speed to half of the maximum speed
       // only do this when the tag is no longer visible, ie the car has reached the tag
 
-      targetSpeed_MODE_0_Speed_Set_by_Lens = MaxSpeedCmS / 1.25;
+      targetSpeed_MODE_0_Speed_Set_by_Lens = MaxSpeedCmS / 1.2;
 
       // Serial.println(huskySaw);
 
@@ -909,7 +911,7 @@ enum Face
  * @return void
 
  */
-# 765 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 767 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void huskyLensLogin()
 {
   bool login = false; // Flag to indicate whether login is successful
@@ -1026,6 +1028,8 @@ void huskyLensLogin()
         // Notify user that the recognized face is not authorized
         _UART1_.println("Face Not Recognised, Please go away!");
 
+        matrix.loadFrame(LEDMATRIX_DANGER);
+
         // PlaySoundOnSpeaker
 
         // Delay to avoid continuous processing
@@ -1071,7 +1075,7 @@ char data;
  * It should be called once at the beginning of the program.
 
  */
-# 922 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 926 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void connectionSetup()
 {
 
@@ -1080,7 +1084,7 @@ void connectionSetup()
   // Initiate a connection to the WiFi network using the provided SSID and password
   WiFi.beginAP(ssid, pass);
 
-  delay(1000);
+  delay(5000);
 
   // Obtain the local IP address assigned to the Arduino on the WiFi network
   IPAddress ip = WiFi.localIP();
@@ -1116,7 +1120,7 @@ void connectionSetup()
  * @return void
 
  */
-# 956 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 960 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void connectClient()
 {
 
@@ -1161,7 +1165,7 @@ void connectClient()
  * @note This function assumes that the WebClient has been initialized and is connected to a server.
 
  */
-# 991 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 995 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void checkServer()
 {
 
@@ -1271,7 +1275,8 @@ void checkServer()
         carSpeedAlmostCmS = targetSpeedCmS_MODE_2_Speed_Control_PID;
 
         // Print a message debugging the change in speed (commented out)
-        // Serial.println("Inside Mode 2, Changing speed to: " + String(targetSpeedCmS));
+
+        // Serial.println("Inside Mode 2, Changing speed to: " + String(targetSpeedCmS_MODE_2_Speed_Control_PID));
       }
     }
 
@@ -1310,7 +1315,7 @@ void checkServer()
  * @return None
 
  */
-# 1124 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1129 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void sendMessageCSV()
 {
 
@@ -1332,6 +1337,8 @@ void sendMessageCSV()
   // The WebClient object is assumed to have a write function that accepts a character array and its length
   WebClient.write(messageCSV.c_str(), messageCSV.length());
 
+  // Serial.println("Speed is : " + String(experimentalSpeedCmS));
+
   // Print the constructed CSV message (commented out)
   // Serial.println(messageCSV);
 }
@@ -1345,7 +1352,7 @@ void sendMessageCSV()
  * Unused in the current implementation.
 
  */
-# 1154 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1161 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void sendMessage()
 {
   /*
@@ -1361,7 +1368,7 @@ void sendMessage()
 
 
     */
-# 1164 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1171 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
   /*
 
     message = "Distance travelled: " + String(int((leftPulseCount + rightPulseCount) * 3.142 * radiusOfWheel / EncoderPulsesPerRevolution))
@@ -1381,7 +1388,7 @@ void sendMessage()
               + " Current mode: " + ((currentMode == MODE_1_Object_Following) ? "Mode1 \n" : "Mode2URL \n");
 
     */
-# 1175 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1182 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
   /*
 
     message[0] = int(distanceTravelledByTheCar);
@@ -1399,7 +1406,7 @@ void sendMessage()
     WebClient.write(message, sizeof(message));
 
     */
-# 1184 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1191 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 }
 
 // Matrix Handling
@@ -1443,7 +1450,7 @@ const uint32_t W5[4] = {
  * The smiley face pattern is loaded onto the matrix using the loadFrame() function.
 
  */
-# 1225 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1232 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 // Function to display a smiley pattern on the LED matrix
 void displaySmiley()
 {
@@ -1488,7 +1495,7 @@ void displayW5()
  * @return The distance to the closest obstacle in meters.
 
  */
-# 1265 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1272 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 double closestObstacleUsingSonar()
 {
 
@@ -1542,7 +1549,7 @@ double closestObstacleUsingSonar()
  * @return void
 
  */
-# 1306 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1313 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void checkPositionRelativeToObject()
 {
 
@@ -1606,7 +1613,7 @@ void checkPositionRelativeToObject()
  * based on the readings of the husky lens, it can turn left or right on a forked path.
 
  */
-# 1363 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1370 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void keepMovingCheckingIRSensors()
 {
 
@@ -1661,6 +1668,7 @@ void keepMovingCheckingIRSensors()
     {
       turnRight();
     }
+
   }
 
   // Serial.println("end of keepMovingCheckingIRSensors");
@@ -1682,7 +1690,7 @@ inline int mapSpeedCmSToPWM(double speed);
  * @return The mapped PWM value.
 
  */
-# 1433 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1441 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 inline int mapSpeedCmSToPWM(double speed)
 {
 
@@ -1711,7 +1719,7 @@ inline int mapSpeedCmSToPWM(double speed)
  * @param speed The speed at which the vehicle should move forward.
 
  */
-# 1457 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1465 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void moveForwardatSpeed(double speed)
 {
 
@@ -1743,7 +1751,7 @@ void moveForwardatSpeed(double speed)
  * Stops the car.
 
  */
-# 1486 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1494 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void stopCar()
 {
 
@@ -1776,7 +1784,7 @@ void stopCar()
  * This function is responsible for turning the autonomous vehicle to the left.
 
  */
-# 1514 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1522 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void turnLeft()
 {
 
@@ -1813,7 +1821,7 @@ void turnLeft()
  * This function is responsible for turning the autonomous vehicle to the right.
 
  */
-# 1546 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1554 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void turnRight()
 {
 
@@ -1853,7 +1861,7 @@ void turnRight()
  * The function then activates the motors to turn the vehicle around for a duration of 300 milliseconds.
 
  */
-# 1579 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1587 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void turningAround()
 {
 
@@ -1864,16 +1872,16 @@ void turningAround()
 
   analogWrite(
       RightMotorPWM,
-      RightWheelCoefficient * 100);
+      RightWheelCoefficient * 155);
 
   analogWrite(
       LeftMotorPWM,
-      LeftWheelCoefficient * 100);
+      LeftWheelCoefficient * 145);
 
   digitalWrite(RightMotorBack, HIGH);
   digitalWrite(LeftMotorSwitchActive, HIGH);
 
-  delay(2000);
+  delay(2100);
 
   digitalWrite(RightMotorSwitch1, LOW);
   digitalWrite(RightMotorSwitch2, LOW);
@@ -1950,7 +1958,7 @@ void freeBird()
  *        If the loop counter is a multiple of 700, it calculates the distance travelled by the car, calculates the speed, sends a message in CSV format, and resets the loop counter.
 
  */
-# 1668 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1676 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void decideTheCarsStatus()
 {
 
@@ -2051,7 +2059,7 @@ void decideTheCarsStatus()
  *
 
  */
-# 1756 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1764 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void moveITmaybe()
 {
 
@@ -2091,7 +2099,7 @@ void moveITmaybe()
  * @return void
 
  */
-# 1788 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1796 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void initialiseStuff()
 {
 
@@ -2143,7 +2151,7 @@ void initialiseStuff()
  * other necessary setup tasks. After the setup is completed, the Arduino is ready to execute the main loop.
 
  */
-# 1833 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1841 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void setup()
 {
 
@@ -2287,7 +2295,7 @@ void setup()
  * It also increments the loop counter for each iteration.
 
  */
-# 1971 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
+# 1979 "C:\\Users\\divyu\\OneDrive - Trinity College Dublin\\Desktop\\Buggy\\Autonomous-Vehicle-Arduino-Project\\Arduino Code\\Gold-Challenge-Code\\Gold-Challenge-Code.ino"
 void loop()
 {
   // Delegate the primary control logic
