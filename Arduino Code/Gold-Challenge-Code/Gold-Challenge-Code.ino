@@ -78,7 +78,7 @@ volatile unsigned long leftPulseCount = 0;  // Pulse count for the left motor en
 volatile unsigned long rightPulseCount = 0; // Pulse count for the right motor encoder
 
 // Constants
-const double RightWheelCoefficient = 0.87;     // Coefficient for adjusting Right wheel speed
+const double RightWheelCoefficient = 0.96;     // Coefficient for adjusting Right wheel speed
 const double LeftWheelCoefficient = 1;         // Coefficient for adjusting left wheel speed
 const double MinSpeedCmS = 0;                  // Minimum speed CmS for the car
 const double MaxSpeedCmS = 50;                 // Maximum speed CmS for the car
@@ -107,7 +107,7 @@ double targetSpeed_MODE_0_Speed_Set_by_Lens = MaxSpeedCmS;    // Speed to reach 
 bool leftIRSensorSwitchedOnByLens = false;                    // Switch on or off IR sensors using husky lens
 bool rightIRSensorSwitchedOnByLens = true;                   // Switch on or off IR sensors using husky lens
 int turnSpeedOuterPulseWidth = PWMMax;                           // Turning speed for outer wheel
-int turnSpeedInnerPulseWidth = 30;                            // Turning speed for inner wheel
+int turnSpeedInnerPulseWidth = 50;                            // Turning speed for inner wheel
 int nearWidthThreshold = 57;                                  // Threshold for near width for checking the last tag seen by husky lens
 int nearHeightThreshold = 56;                                 // Threshold for near height for checking the last tag seen by husky lens
 
@@ -429,16 +429,16 @@ HUSKYLENS huskylens;
 enum TAG
 {
 
-  TAG_0,             // Nothing
-  TAG_1_Start,       // Start
-  TAG_2_Stop,        // Stop
-  TAG_3_heart,       // heart
-  TAG_4_Smiley,      // Smiley
-  TAG_5_W5,          // W5
-  TAG_6_Turn_Left,   // Turn Left
-  TAG_7_Turn_Right,  // Turn Right
-  TAG_8_Slow_Down,   // Slow Down
-  TAG_9_Speed_Up,    // Speed UP
+  TAG_0,            // Nothing
+  TAG_1_Start,      // Start
+  TAG_2_Stop,       // Stop
+  TAG_3_heart,      // heart
+  TAG_4_Smiley,     // Smiley
+  TAG_5_W5,         // W5
+  TAG_6_Turn_Left,  // Turn Left
+  TAG_7_Turn_Right, // Turn Right
+  TAG_8_Slow_Down,  // Slow Down
+  TAG_9_Speed_Up,   // Speed UP
 
 
 };
@@ -587,7 +587,7 @@ void askHusky()
     HUSKYLENSResult result = huskylens.read();
 
     // Print the result to the Serial Monitor for debigging purposes
-    
+
     // printResult(result);
 
     // Convert the ID to a TAG object and store it in the huskySaw variable
@@ -1149,6 +1149,9 @@ void sendMessageCSV()
 
   // Serial.println("Speed is : " + String(experimentalSpeedCmS));
 
+  // Serial.println("Left Pulse is: " + String(leftPulseCount));
+  // Serial.println("Right Pulse is: " + String(rightPulseCount));
+
   // Print the constructed CSV message (commented out)
   // Serial.println(messageCSV);
 }
@@ -1422,6 +1425,7 @@ void keepMovingCheckingIRSensors()
       turnRight();
     }
 
+    delay(10);
   }
 
   // Serial.println("end of keepMovingCheckingIRSensors");
